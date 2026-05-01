@@ -2,6 +2,7 @@ const { ethers } = require('ethers');
 const Transaction = require('../models/Transaction');
 const AuditLog = require('../models/AuditLog');
 const { getProvider, escrowVaultAbi } = require('./blockchainService');
+const blockchainService = require('./blockchainService');
 const generateTxnId = require('../utils/generateTxnId');
 
 // Simple in-memory store for last processed block (production: use Redis or DB)
@@ -13,7 +14,7 @@ let lastProcessedBlock = 0;
  */
 const startEventListeners = async () => {
   try {
-    const provider = getProvider();
+    const provider = blockchainService.getProvider();
     if (!provider) {
       console.log('EventListener: No RPC provider configured — blockchain event listening disabled');
       return;
@@ -43,7 +44,7 @@ const startEventListeners = async () => {
  */
 const attachListenerToContract = (provider, project) => {
   try {
-    const contract = new ethers.Contract(project.contractAddress, escrowVaultAbi, provider);
+    const contract = new ethers.Contract(project.contractAddress, blockchainService.escrowVaultAbi, provider);
 
     contract.on('FundsReleased', async (projectId, amount, contractor, event) => {
       console.log(`EventListener: FundsReleased event for ${projectId}`);

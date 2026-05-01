@@ -1,8 +1,10 @@
 const errorHandler = (err, req, res, _next) => {
-  console.error('Error:', err.message);
-  if (process.env.NODE_ENV !== 'production') {
-    console.error(err.stack);
-  }
+  // Enhanced logging for debugging
+  console.error('--- INTERNAL SERVER ERROR ---');
+  console.error('Message:', err.message);
+  console.error('Stack:', err.stack);
+  console.error('Request Body:', JSON.stringify(req.body, null, 2));
+  console.error('-----------------------------');
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {

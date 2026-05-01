@@ -59,8 +59,9 @@ const deployEscrowVault = async (projectId, contractorWalletAddress, totalBudget
 
     // Create project on-chain with ETH value representing the budget
     // Using Wei as a representation layer (1 INR = 1 Wei for tracking purposes)
-    const budgetInWei = ethers.parseUnits(totalBudget.toString(), 'wei');
-    const milestoneAmountsInWei = milestoneAmounts.map(a => ethers.parseUnits(a.toString(), 'wei'));
+    // Ensure values are integers for 'wei' units
+    const budgetInWei = ethers.parseUnits(Math.floor(totalBudget).toString(), 'wei');
+    const milestoneAmountsInWei = milestoneAmounts.map(a => ethers.parseUnits(Math.floor(a).toString(), 'wei'));
     
     const createTx = await contract.createProject(projectId, contractorWalletAddress, milestoneAmountsInWei, {
       value: budgetInWei,
@@ -150,6 +151,9 @@ const setProjectFreezeStatus = async (contractAddress, projectId, frozen) => {
 };
 
 module.exports = {
+  getProvider,
+  getSigner,
+  escrowVaultAbi,
   deployEscrowVault,
   getVaultState,
   releaseMilestoneFunds,

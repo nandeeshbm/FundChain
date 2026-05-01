@@ -12,13 +12,16 @@ const { AppError } = require('../middleware/errorHandler');
  * Create a new project with milestones, optional blockchain deployment, and audit trail.
  */
 const createProject = async (payload, adminUser, reqMeta = {}) => {
+  console.log(`projectService: Starting createProject for ${payload.projectName}`);
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
+    console.log('projectService: Session started');
     // 1. Validate contractor (optional — allow null contractor for now)
     let vendor = null;
     if (payload.contractorId) {
+      console.log(`projectService: Looking up vendor ${payload.contractorId}`);
       // Try lookup by ObjectId, fallback to registryId
       const isObjectId = mongoose.Types.ObjectId.isValid(payload.contractorId);
       if (isObjectId) {
@@ -37,6 +40,7 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
     const milestoneSum = milestonesList.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
     const budgetDiff = Math.abs(milestoneSum - payload.totalBudget);
     if (budgetDiff > 1 && milestonesList.length > 0) {
+      console.log('projectService: Validating milestone budget');
       // Allow up to ₹1 rounding diff; only fail if milestones sum is wildly off
       if (budgetDiff / payload.totalBudget > 0.01) {
         throw new AppError(
@@ -47,7 +51,12 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
     }
 
     // 3. Generate project ID
-    const projectId = await generateProjectId();
+    console.log('projectService: Generating Project ID');
+    const projectId = await generateProjectId().catch(e => {
+      console.error('generateProjectId failed:', e.message);
+      return `PJT${Date.now()}`; 
+    });
+    console.log(`projectService: Generated ID ${projectId}`);
 
     // 4. Try blockchain deployment — skip gracefully if no private key
     let deployResult = {
@@ -56,6 +65,7 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
       blockNumber: null,
     };
     if (vendor?.walletAddress) {
+      console.log(`projectService: Deploying to blockchain for vendor ${vendor.walletAddress}`);
       try {
         const milestoneAmounts = milestonesList.map((m) => Number(m.amount));
         deployResult = await blockchainService.deployEscrowVault(
@@ -68,8 +78,10 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
         console.warn(`BlockchainService: Skipping deployment — ${bcErr.message}`);
       }
     }
+    console.log(`projectService: Deploy result: ${deployResult.contractAddress || 'none'}`);
 
     // 5. Create Project document
+    console.log('projectService: Saving project to MongoDB');
     const [project] = await Project.create(
       [{
         projectName: payload.projectName,
@@ -96,13 +108,15 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
         expectedSupplierIRNMin: payload.expectedSupplierIRNMin || null,
         expectedSupplierIRNMax: payload.expectedSupplierIRNMax || null,
         requiredProofs: payload.requiredProofs || { sitePhoto: true, materialReceipt: true, completionCertificate: true },
-        createdBy: adminUser._id,
-        lastUpdatedBy: adminUser._id,
+        createdBy: adminUser?._id,
+        lastUpdatedBy: adminUser?._id,
       }],
       { session }
     );
+    console.log('projectService: Project created in DB');
 
     // 6. Create Milestones
+    console.log('projectService: Creating milestones');
     const milestones = await Milestone.create(
       milestonesList.map((m, idx) => ({
         projectId: project._id,
@@ -114,8 +128,10 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
       })),
       { session }
     );
+    console.log(`projectService: ${milestones.length} milestones created`);
 
     // 7. Create initial "fund_lock" transaction
+    console.log('projectService: Creating fund_lock transaction');
     await transactionService.createTransaction({
       projectId: project._id,
       projectNameSnapshot: project.projectName,
@@ -123,15 +139,16 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
       amount: project.totalBudget,
       contractAddress: project.contractAddress,
       onChainTxnHash: project.contractDeploymentTxHash,
-      initiatedBy: adminUser._id,
+      initiatedBy: adminUser?._id,
       status: 'success',
       notes: 'Initial budget locked in vault',
     }, session);
 
     // 8. Audit log
+    console.log('projectService: Creating audit log');
     await auditService.logAction({
-      userId: adminUser._id,
-      userRole: adminUser.role,
+      userId: adminUser?._id,
+      userRole: adminUser?.role,
       action: 'PROJECT_CREATED',
       entityType: 'project',
       entityId: project.projectId,
@@ -141,9 +158,12 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
       userAgent: reqMeta.userAgent,
     }, session);
 
+    console.log('projectService: Committing transaction');
     await session.commitTransaction();
+    console.log('projectService: Success');
     return { project, milestones };
   } catch (err) {
+    console.error('projectService: FAILED:', err);
     if (session) {
       await session.abortTransaction();
     }
