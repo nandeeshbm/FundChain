@@ -36,7 +36,11 @@ export default function AuditorAlerts() {
       setSelected(null); setNote('');
       const f = await axios.get(`${API}/auditor/flagged-transactions?limit=50`, authHeader());
       if (f.data.success) setFlagged(f.data.data || []);
-    } catch (e) { alert(e.response?.data?.message || 'Failed'); }
+    } catch (e) {
+      const msg = e.response?.data?.message || 'Failed';
+      const details = e.response?.data?.errors?.join('\n');
+      alert(details ? `${msg}\n\n${details}` : msg);
+    }
     finally { setResolving(false); }
   };
 
@@ -170,7 +174,7 @@ export default function AuditorAlerts() {
               </div>
             )}
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Resolution Note *</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Resolution Note * (min 2 chars)</div>
               <textarea value={note} onChange={e => setNote(e.target.value)}
                 placeholder="Enter reason for this decision..."
                 style={{ width: '100%', padding: 10, border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 12, minHeight: 70, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />

@@ -89,7 +89,7 @@ const releaseFundsSchema = Joi.object({
 
 const resolveTransactionSchema = Joi.object({
   resolutionStatus: Joi.string().valid('resolved', 'escalated', 'dismissed', 'frozen').required(),
-  resolutionNote: Joi.string().trim().min(3).required(),
+  resolutionNote: Joi.string().trim().min(2).required(),
 });
 
 const createVendorSchema = Joi.object({
