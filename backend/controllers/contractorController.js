@@ -117,4 +117,51 @@ const submitProof = async (req, res, next) => {
   }
 };
 
-module.exports = { submitProof };
+// GET /api/contractor/submissions
+const getMySubmissions = async (req, res, next) => {
+  try {
+    const User = require('../models/User');
+    const user = await User.findById(req.user?._id).select('contractorRegistryId walletAddress').lean();
+
+    let vendor = null;
+    if (user?.contractorRegistryId) {
+      vendor = await Vendor.findOne({ registryId: user.contractorRegistryId }).lean();
+    }
+    if (!vendor && user?.walletAddress) {
+      vendor = await Vendor.findOne({ walletAddress: user.walletAddress }).lean();
+    }
+    if (!vendor) {
+      vendor = await Vendor.findOne({ createdBy: req.user?._id }).lean();
+    }
+    if (!vendor) {
+      return apiResponse.success(res, 'Submissions retrieved', []);
+    }
+
+    const submissions = await ProofSubmission.find({ contractorId: vendor._id })
+      .sort({ submittedAt: -1 })
+      .populate({ path: 'projectId', select: 'projectName projectId' })
+      .populate({ path: 'milestoneId', select: 'title phaseNumber amount status sentinelStatus' })
+      .lean();
+
+    const normalized = submissions.map((s) => ({
+      _id: s._id,
+      proofId: `PRF-${String(s._id).slice(-6).toUpperCase()}`,
+      projectName: s.projectId?.projectName || '—',
+      projectCode: s.projectId?.projectId || '—',
+      milestoneTitle: s.milestoneId?.title || `Phase ${s.milestoneId?.phaseNumber || ''}`.trim(),
+      amount: s.milestoneId?.amount || 0,
+      sentinelStatus: s.sentinelResult || 'pending',
+      status: s.milestoneId?.status || 'submitted',
+      submittedAt: s.submittedAt || s.createdAt,
+      gpsLatitude: s.gpsLatitude,
+      gpsLongitude: s.gpsLongitude,
+      taxIRN: s.taxIRN,
+    }));
+
+    return apiResponse.success(res, 'Submissions retrieved', normalized);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { submitProof, getMySubmissions };

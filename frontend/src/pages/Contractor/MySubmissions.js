@@ -22,8 +22,7 @@ export default function MySubmissions() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        // Contractor sees all transactions they are involved in
-        const res = await axios.get(`${API}/transactions`, authHeader());
+        const res = await axios.get(`${API}/contractor/submissions`, authHeader());
         if (res.data.success) setItems(res.data.data || []);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -58,7 +57,7 @@ export default function MySubmissions() {
           <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>Track the status of your milestone proof submissions</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {['all', 'success', 'pending', 'flagged'].map(f => (
+          {['all', 'success', 'pending', 'flagged', 'submitted'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               style={{ padding: '7px 16px', borderRadius: 8, border: '1.5px solid', cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s',
                 borderColor: filter === f ? '#f59e0b' : '#e2e8f0',
@@ -74,8 +73,8 @@ export default function MySubmissions() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
           { label: 'Total Claims', value: items.length, icon: '📋', color: '#2563eb', bg: '#eff6ff' },
-          { label: 'Approved', value: items.filter(i => i.status === 'success').length, icon: '✅', color: '#10b981', bg: '#f0fdf4' },
-          { label: 'Pending Review', value: items.filter(i => i.status === 'pending').length, icon: '⏳', color: '#f59e0b', bg: '#fffbeb' },
+          { label: 'Approved', value: items.filter(i => i.sentinelStatus === 'success').length, icon: '✅', color: '#10b981', bg: '#f0fdf4' },
+          { label: 'Pending Review', value: items.filter(i => ['pending', 'submitted'].includes(i.status)).length, icon: '⏳', color: '#f59e0b', bg: '#fffbeb' },
           { label: 'Total Claimed', value: fmt(items.reduce((s, i) => s + (i.amount || 0), 0)), icon: '💰', color: '#6366f1', bg: '#f5f3ff' },
         ].map(s => (
           <div key={s.label} style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -93,7 +92,7 @@ export default function MySubmissions() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {['Txn ID', 'Project', 'Type', 'Amount', 'Sentinel', 'Status', 'Submitted'].map(h => (
+              {['Proof ID', 'Project', 'Milestone', 'Amount', 'Sentinel', 'Status', 'Submitted'].map(h => (
                 <th key={h} style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, color: '#94a3b8', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase', fontWeight: 700, letterSpacing: 0.5 }}>{h}</th>
               ))}
             </tr>
@@ -112,11 +111,13 @@ export default function MySubmissions() {
               const tc = statusColor(item.status);
               return (
                 <tr key={item._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: 12, color: '#2563eb', fontWeight: 700 }}>{item.txnId}</td>
+                  <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontSize: 12, color: '#2563eb', fontWeight: 700 }}>{item.proofId}</td>
                   <td style={{ padding: '14px 16px', fontSize: 13, fontWeight: 500, color: '#1e293b', maxWidth: 180 }}>
-                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.projectNameSnapshot || '—'}</div>
+                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.projectName || '—'} <span style={{ color: '#94a3b8' }}>({item.projectCode || '-'})</span>
+                    </div>
                   </td>
-                  <td style={{ padding: '14px 16px', fontSize: 12, color: '#64748b', textTransform: 'capitalize' }}>{item.type?.replace('_', ' ')}</td>
+                  <td style={{ padding: '14px 16px', fontSize: 12, color: '#64748b' }}>{item.milestoneTitle || '—'}</td>
                   <td style={{ padding: '14px 16px', fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{fmt(item.amount)}</td>
                   <td style={{ padding: '14px 16px' }}>
                     <span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: sc.bg, color: sc.color }}>
@@ -128,7 +129,7 @@ export default function MySubmissions() {
                       {item.status || '—'}
                     </span>
                   </td>
-                  <td style={{ padding: '14px 16px', fontSize: 12, color: '#94a3b8' }}>{timeAgo(item.createdAt)}</td>
+                  <td style={{ padding: '14px 16px', fontSize: 12, color: '#94a3b8' }}>{timeAgo(item.submittedAt)}</td>
                 </tr>
               );
             })}
