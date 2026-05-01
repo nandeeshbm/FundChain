@@ -17,9 +17,9 @@ const logAction = async ({
   ipAddress = null,
   userAgent = null,
   status = 'success',
-}) => {
+}, session = null) => {
   try {
-    const log = new AuditLog({
+    const logData = {
       userId,
       userRole,
       action,
@@ -33,8 +33,8 @@ const logAction = async ({
       ipAddress,
       userAgent,
       status,
-    });
-    await log.save();
+    };
+    const [log] = await AuditLog.create([logData], { session });
     return log;
   } catch (err) {
     console.error('AuditService: Failed to create audit log:', err.message);

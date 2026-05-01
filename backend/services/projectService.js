@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Project = require('../models/Project');
 const Milestone = require('../models/Milestone');
 const Vendor = require('../models/Vendor');
+const blockchainService = require('./blockchainService');
 const generateProjectId = require('../utils/generateProjectId');
 const transactionService = require('./transactionService');
 const auditService = require('./auditService');
@@ -32,9 +33,10 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
     }
 
     // 2. Validate milestone amounts — warn but don't fail (admin can adjust later)
-    const milestoneSum = payload.milestoneBreakdown.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
+    const milestonesList = payload.milestoneBreakdown || [];
+    const milestoneSum = milestonesList.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
     const budgetDiff = Math.abs(milestoneSum - payload.totalBudget);
-    if (budgetDiff > 1 && milestoneSum !== 0) {
+    if (budgetDiff > 1 && milestonesList.length > 0) {
       // Allow up to ₹1 rounding diff; only fail if milestones sum is wildly off
       if (budgetDiff / payload.totalBudget > 0.01) {
         throw new AppError(
@@ -55,8 +57,7 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
     };
     if (vendor?.walletAddress) {
       try {
-        const blockchainService = require('./blockchainService');
-        const milestoneAmounts = payload.milestoneBreakdown.map((m) => Number(m.amount));
+        const milestoneAmounts = milestonesList.map((m) => Number(m.amount));
         deployResult = await blockchainService.deployEscrowVault(
           projectId,
           vendor.walletAddress,
@@ -103,7 +104,7 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
 
     // 6. Create Milestones
     const milestones = await Milestone.create(
-      payload.milestoneBreakdown.map((m, idx) => ({
+      milestonesList.map((m, idx) => ({
         projectId: project._id,
         phaseNumber: idx + 1,
         title: m.title || `Phase ${idx + 1}`,
@@ -143,7 +144,7 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
     await session.commitTransaction();
     return { project, milestones };
   } catch (err) {
-    if (session.inAtomicitySession()) {
+    if (session) {
       await session.abortTransaction();
     }
     throw err;

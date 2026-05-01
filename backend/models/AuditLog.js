@@ -35,8 +35,7 @@ AuditLogSchema.index({ createdAt: -1 });
 // Auto-generate auditId
 AuditLogSchema.pre('save', async function (next) {
   if (this.isNew && !this.auditId) {
-    const count = await mongoose.model('AuditLog').countDocuments();
-    this.auditId = `AUD${String(count + 1).padStart(4, '0')}`;
+    this.auditId = `AUD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   }
   next();
 });
