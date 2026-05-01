@@ -11,6 +11,8 @@ module.exports = {
   DEPLOYER_PRIVATE_KEY: process.env.DEPLOYER_PRIVATE_KEY || '',
   CHAIN_ID: parseInt(process.env.CHAIN_ID || '11155111', 10),
   EXPLORER_BASE_URL: process.env.EXPLORER_BASE_URL || 'https://sepolia.etherscan.io',
+  VENDOR_REGISTRY_ADDRESS: process.env.VENDOR_REGISTRY_ADDRESS,
+  ESCROW_VAULT_MASTER_ADDRESS: process.env.ESCROW_VAULT_MASTER_ADDRESS,
 
   // Event listener
   LAST_PROCESSED_BLOCK_KEY: 'lastProcessedBlock',
