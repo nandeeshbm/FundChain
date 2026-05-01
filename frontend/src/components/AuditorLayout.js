@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const auditorMenuSections = [
