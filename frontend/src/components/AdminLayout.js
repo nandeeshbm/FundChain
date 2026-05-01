@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import MetaMaskButton from './MetaMaskButton';
 
 const menuSections = [
   {
@@ -219,6 +220,10 @@ function AdminLayout() {
                 onClick={(e) => {
                   if (item.label === "Logout") {
                     e.preventDefault();
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('userId');
                     navigate("/login");
                   }
                 }}
@@ -235,9 +240,9 @@ function AdminLayout() {
           <div className="admin-user">
             <div className="admin-avatar">AD</div>
             <div>
-              <div style={{ color: "#fff", fontWeight: 600, fontSize: "0.95rem" }}>Admin User</div>
+              <div style={{ color: "#fff", fontWeight: 600, fontSize: "0.95rem" }}>{localStorage.getItem('userName') || 'Admin User'}</div>
               <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
-                Administrator
+                {localStorage.getItem('userRole') || 'Administrator'}
               </div>
             </div>
           </div>
@@ -250,6 +255,7 @@ function AdminLayout() {
             <div className="admin-top-title">{pageTitle}</div>
             <div className="admin-top-sub">Home / {pageTitle}</div>
           </div>
+          <MetaMaskButton compact />
         </header>
         <div className="admin-content">
           <Outlet />

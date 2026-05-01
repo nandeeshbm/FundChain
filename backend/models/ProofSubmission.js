@@ -8,6 +8,7 @@ const ProofSubmissionSchema = new mongoose.Schema({
   ipfsPhotoCid: { type: String, default: null },
   gpsLatitude: { type: Number, required: true, min: -90, max: 90 },
   gpsLongitude: { type: Number, required: true, min: -180, max: 180 },
+  taxIRN: { type: String, default: null }, // 64-character Govt IRN
   distanceFromOfficialPinMeters: { type: Number, default: null },
   uploadedProofs: {
     sitePhoto: { type: Boolean, default: false },

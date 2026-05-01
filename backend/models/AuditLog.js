@@ -26,7 +26,7 @@ const AuditLogSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-AuditLogSchema.index({ auditId: 1 });
+// auditId index auto-created by unique: true
 AuditLogSchema.index({ userId: 1 });
 AuditLogSchema.index({ entityType: 1 });
 AuditLogSchema.index({ projectId: 1 });

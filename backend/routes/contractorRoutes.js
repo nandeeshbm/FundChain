@@ -5,7 +5,7 @@ const authorizeRoles = require('../middleware/authorizeRoles');
 const { validate, submitProofSchema } = require('../middleware/validateRequest');
 const { submitProof } = require('../controllers/contractorController');
 
-router.use(authenticateUser, authorizeRoles('contractor'));
+router.use(authenticateUser, authorizeRoles('contractor', 'admin'));
 
 router.post('/milestones/:milestoneId/submit-proof', validate(submitProofSchema), submitProof);
 

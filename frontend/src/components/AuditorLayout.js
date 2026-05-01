@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import MetaMaskButton from './MetaMaskButton';
 
 const auditorMenuSections = [
   {
@@ -221,6 +222,10 @@ function AuditorLayout() {
                 onClick={(e) => {
                   if (item.label === "Logout") {
                     e.preventDefault();
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('userId');
                     navigate("/login");
                   }
                 }}
@@ -235,12 +240,10 @@ function AuditorLayout() {
 
         <div className="auditor-footer">
           <div className="auditor-user">
-            <div className="auditor-avatar">AU</div>
+            <div className="auditor-avatar">{(localStorage.getItem('userName') || 'AU').slice(0,2).toUpperCase()}</div>
             <div>
-              <div style={{ color: "#fff", fontWeight: 600, fontSize: "0.92rem" }}>Auditor 01</div>
-              <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>
-                Forensic Auditor
-              </div>
+              <div style={{ color: "#fff", fontWeight: 600, fontSize: "0.92rem" }}>{localStorage.getItem('userName') || 'Auditor'}</div>
+              <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}>Forensic Auditor</div>
             </div>
           </div>
         </div>
@@ -252,6 +255,7 @@ function AuditorLayout() {
             <div className="auditor-top-title">{pageTitle}</div>
             <div className="auditor-top-sub">Auditor Sentinel / {pageTitle}</div>
           </div>
+          <MetaMaskButton compact />
         </header>
         <div className="auditor-content">
           <Outlet />

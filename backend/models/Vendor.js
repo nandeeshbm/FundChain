@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const VendorSchema = new mongoose.Schema({
   vendorName: { type: String, required: true, trim: true },
   companyName: { type: String, required: true, trim: true },
-  walletAddress: { type: String, required: true, trim: true },
+  walletAddress: { type: String, trim: true, default: null },
   email: { type: String, required: true, trim: true, lowercase: true },
   phone: { type: String, required: true, trim: true },
   isWhitelisted: { type: Boolean, default: true },
@@ -20,7 +20,7 @@ const VendorSchema = new mongoose.Schema({
   notes: { type: String, default: '' },
 }, { timestamps: true });
 
-VendorSchema.index({ registryId: 1 });
+// registryId index auto-created by unique: true
 VendorSchema.index({ walletAddress: 1 });
 VendorSchema.index({ isWhitelisted: 1 });
 

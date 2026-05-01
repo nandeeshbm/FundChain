@@ -7,12 +7,15 @@ const {
   getFlaggedTransactions,
   getTransactionReview,
   resolveTransaction,
+  freezeProject,
 } = require('../controllers/auditorController');
 
-router.use(authenticateUser, authorizeRoles('auditor'));
+// Auditor AND admin can read flagged data; only auditor can resolve
+router.use(authenticateUser);
 
-router.get('/flagged-transactions', getFlaggedTransactions);
-router.get('/transactions/:txnId/review', getTransactionReview);
-router.post('/transactions/:txnId/resolve', validate(resolveTransactionSchema), resolveTransaction);
+router.get('/flagged-transactions', authorizeRoles('auditor', 'admin'), getFlaggedTransactions);
+router.get('/transactions/:txnId/review', authorizeRoles('auditor', 'admin'), getTransactionReview);
+router.post('/transactions/:txnId/resolve', authorizeRoles('auditor'), validate(resolveTransactionSchema), resolveTransaction);
+router.post('/projects/:projectId/freeze', authorizeRoles('auditor'), freezeProject);
 
 module.exports = router;

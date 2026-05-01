@@ -36,8 +36,13 @@ const submitProof = async (req, res, next) => {
       ipfsPhotoCid: req.body.ipfsPhotoCid || null,
       gpsLatitude: req.body.gpsLatitude,
       gpsLongitude: req.body.gpsLongitude,
+      taxIRN: req.body.taxIRN || null,
       distanceFromOfficialPinMeters: Math.round(distance),
-      uploadedProofs: req.body.uploadedProofs,
+      uploadedProofs: {
+        sitePhoto:             !!(req.body.uploadedProofs?.sitePhoto),
+        materialReceipt:       !!(req.body.uploadedProofs?.materialReceipt),
+        completionCertificate: !!(req.body.uploadedProofs?.completionCertificate),
+      },
       receiptDocumentUrl: req.body.receiptDocumentUrl || null,
       completionCertificateUrl: req.body.completionCertificateUrl || null,
       forensicMeta: req.body.forensicMeta || {},
@@ -70,6 +75,20 @@ const submitProof = async (req, res, next) => {
       milestone.sentinelStatus = 'success';
     }
     await milestone.save();
+
+    // Create "utilization" transaction record
+    const transactionService = require('../services/transactionService');
+    await transactionService.createTransaction({
+      projectId: project._id,
+      milestoneId: milestone._id,
+      projectNameSnapshot: project.projectName,
+      type: 'utilization',
+      amount: milestone.amount,
+      initiatedBy: req.user?._id,
+      status: sentinel.sentinelResult === 'flagged' ? 'flagged' : 'pending',
+      proofSubmissionId: proof._id,
+      notes: `Proof submitted for Phase ${milestone.phaseNumber}. Sentinel result: ${sentinel.sentinelResult}`,
+    });
 
     await auditService.logAction({
       userId: req.user?._id,

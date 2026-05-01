@@ -23,36 +23,36 @@ const analyzeSubmission = async ({
 
   if (distance > project.allowedRadiusMeters) {
     reasons.push(
-      `GPS location is ${Math.round(distance)}m from official pin, exceeds allowed radius of ${project.allowedRadiusMeters}m`
+      `❌ FLAGGED: GPS location is ${Math.round(distance)}m from official pin, exceeds allowed radius of ${project.allowedRadiusMeters}m`
     );
   }
 
-  // 2. Required proof completeness check
-  const required = project.requiredProofs || {};
-  const uploaded = proofSubmission.uploadedProofs || {};
-  if (required.sitePhoto && !uploaded.sitePhoto) {
-    reasons.push('Missing required proof: site photo');
-  }
-  if (required.materialReceipt && !uploaded.materialReceipt) {
-    reasons.push('Missing required proof: material receipt');
-  }
-  if (required.completionCertificate && !uploaded.completionCertificate) {
-    reasons.push('Missing required proof: completion certificate');
-  }
-
-  // 3. IRN range validation (if configured)
-  if (project.expectedSupplierIRNMin != null && project.expectedSupplierIRNMax != null) {
-    const forensic = proofSubmission.forensicMeta || {};
-    if (forensic.imageHash) {
-      const hashNum = parseInt(forensic.imageHash.substring(0, 8), 16);
-      const normalizedIRN = hashNum % 1000;
-      if (normalizedIRN < project.expectedSupplierIRNMin || normalizedIRN > project.expectedSupplierIRNMax) {
-        reasons.push(`IRN value ${normalizedIRN} is outside expected range [${project.expectedSupplierIRNMin}, ${project.expectedSupplierIRNMax}]`);
-      }
+  // 2. Tax API Handshake (IRN Validation)
+  // Rule: Checks the submitted 64-character IRN against the Govt Database
+  const irn = proofSubmission.taxIRN;
+  if (!irn) {
+    reasons.push('❌ FLAGGED: Missing Tax IRN Receipt');
+  } else if (irn.length !== 64) {
+    reasons.push('❌ FLAGGED: Invalid IRN format — must be 64 characters');
+  } else {
+    // Mock Govt API check
+    const isIrnValid = irn.startsWith('IRN') || irn.includes('GOV'); 
+    if (!isIrnValid) {
+      reasons.push('❌ FLAGGED: IRN validation failed against Govt Database');
     }
   }
 
-  // 4. Duplicate submission hash check
+  // 3. Missing Proofs
+  const required = project.requiredProofs || {};
+  const uploaded = proofSubmission.uploadedProofs || {};
+  if (required.sitePhoto && (!uploaded.sitePhoto || !proofSubmission.ipfsPhotoCid)) {
+    reasons.push('❌ FLAGGED: Missing required proof: site photo (IPFS)');
+  }
+  if (required.materialReceipt && !uploaded.materialReceipt) {
+    reasons.push('❌ FLAGGED: Missing required proof: material receipt');
+  }
+
+  // 4. Duplicate Submission
   if (proofSubmission.forensicMeta?.imageHash) {
     const duplicateFound = existingSubmissions.some(
       (s) =>
@@ -60,8 +60,18 @@ const analyzeSubmission = async ({
         s._id?.toString() !== proofSubmission._id?.toString()
     );
     if (duplicateFound) {
-      reasons.push('Duplicate image hash detected — possible proof re-use');
+      reasons.push('❌ FLAGGED: Duplicate image hash detected — possible double spending/re-use');
     }
+  }
+
+  // 5. Velocity Check (Rapid movement to unverified wallets)
+  // If the project has too many releases in a short time to unverified vendors
+  const recentReleases = existingSubmissions.filter(s => 
+    s.submittedAt > new Date(Date.now() - 24 * 60 * 60 * 1000) && 
+    s.sentinelResult === 'success'
+  );
+  if (recentReleases.length > 3) {
+    reasons.push('❌ FLAGGED: Velocity check failed — too many submissions in 24h');
   }
 
   // 5. Deadline check

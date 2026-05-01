@@ -1,159 +1,216 @@
-import React, { useState } from 'react'; 
-  
- const AuditorCommandCenter = () => { 
-   const [selectedClaim, setSelectedClaim] = useState(null); 
-  
-   // --- Theme Variables --- 
-   const theme = { 
-     navy: '#0f1f3d', 
-     blueLight: '#2563eb', 
-     green: '#10b981', 
-     amber: '#f59e0b', 
-     red: '#ef4444', 
-     white: '#ffffff', 
-     gray50: '#f8fafc', 
-     gray100: '#f1f5f9', 
-     gray200: '#e2e8f0', 
-     gray600: '#475569', 
-     text: '#1e293b', 
-   }; 
-  
-   // --- Mock Data: Flagged Claims --- 
-   const flaggedClaims = [ 
-     { 
-       id: 'TXN1001', 
-       project: 'Road Construction', 
-       contractor: 'ABC Infra', 
-       amount: '50,00,000', 
-       status: 'Flagged', 
-       reason: 'Location Mismatch', 
-       gpsDist: '8.2 km', 
-       apiMatch: 'Success', 
-       img: 'https://images.unsplash.com/photo-1581094288338-2314dddb7bc3?auto=format&fit=crop&w=300&q=80' 
-     }, 
-     { 
-       id: 'TXN1002', 
-       project: 'School Building', 
-       contractor: 'Buildwell Pvt', 
-       amount: '30,00,000', 
-       status: 'Flagged', 
-       reason: 'Price Mismatch', 
-       gpsDist: '0.4 km', 
-       apiMatch: 'Failed', 
-       img: 'https://images.unsplash.com/photo-1503387762-592dea58ef23?auto=format&fit=crop&w=300&q=80' 
-     } 
-   ]; 
-  
-   const styles = { 
-     container: { background: 'transparent', fontFamily: "'Sora', sans-serif" }, 
-     main: { flex: 1 }, 
-     header: { marginBottom: '24px' }, 
-     title: { fontSize: '24px', fontWeight: '700', color: theme.text }, 
-     grid: { display: 'grid', gridTemplateColumns: selectedClaim ? '1fr 1fr' : '1fr', gap: '24px', transition: 'all 0.3s' }, 
-      
-     // List Card 
-     card: { background: 'white', borderRadius: '16px', border: `1px solid ${theme.gray200}`, overflow: 'hidden' }, 
-     th: { background: theme.gray50, padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: theme.gray600, textTransform: 'uppercase' }, 
-     td: { padding: '16px', fontSize: '13px', borderBottom: `1px solid ${theme.gray100}` }, 
-      
-     // Command Center Panel (The Review Logic) 
-     panel: { background: 'white', borderRadius: '16px', border: `2px solid ${theme.blueLight}`, padding: '24px', position: 'sticky', top: '24px' }, 
-     alertBanner: { background: 'rgba(239, 68, 68, 0.1)', color: theme.red, padding: '12px', borderRadius: '8px', fontWeight: '600', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }, 
-      
-     // Verification Items 
-     verifyBox: { display: 'flex', justifyContent: 'space-between', padding: '12px', background: theme.gray50, borderRadius: '8px', marginBottom: '10px' }, 
-     verifyLabel: { fontSize: '12px', color: theme.gray600, fontWeight: '500' }, 
-     verifyStatus: (isOk) => ({ fontSize: '12px', fontWeight: '700', color: isOk ? theme.green : theme.red }), 
-      
-     // Action Buttons 
-     actionGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '20px' }, 
-     btnApprove: { padding: '12px', background: theme.green, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }, 
-     btnFreeze: { padding: '12px', background: theme.red, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' } 
-   }; 
-  
-   return ( 
-     <div style={styles.container}> 
-       <main style={styles.main}> 
-         <div style={styles.grid}> 
-           {/* Transaction List */} 
-           <div style={styles.card}> 
-             <table style={{ width: '100%', borderCollapse: 'collapse' }}> 
-               <thead> 
-                 <tr> 
-                   <th style={styles.th}>Transaction ID</th> 
-                   <th style={styles.th}>Project</th> 
-                   <th style={styles.th}>Anomaly Reason</th> 
-                   <th style={styles.th}>Action</th> 
-                 </tr> 
-               </thead> 
-               <tbody> 
-                 {flaggedClaims.map((claim) => ( 
-                   <tr key={claim.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedClaim(claim)}> 
-                     <td style={{ ...styles.td, fontWeight: '700', color: theme.blueLight }}>{claim.id}</td> 
-                     <td style={styles.td}>{claim.project}</td> 
-                     <td style={styles.td}> 
-                       <span style={{ color: theme.red, fontWeight: '600' }}>⚠️ {claim.reason}</span> 
-                     </td> 
-                     <td style={styles.td}> 
-                       <button style={{ padding: '6px 12px', background: theme.gray100, border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}> 
-                         Investigate 
-                       </button> 
-                     </td> 
-                   </tr> 
-                 ))} 
-               </tbody> 
-             </table> 
-           </div> 
-  
-           {/* Investigaton Panel (Command Center Feature) */} 
-           {selectedClaim && ( 
-             <div style={styles.panel}> 
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}> 
-                 <h3 style={{ fontWeight: '700' }}>Reviewing {selectedClaim.id}</h3> 
-                 <button onClick={() => setSelectedClaim(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: theme.gray600 }}>✕ Close</button> 
-               </div> 
-  
-               <div style={styles.alertBanner}> 
-                 <span>🚨 ANOMALY DETECTED: {selectedClaim.reason}</span> 
-               </div> 
-  
-               {/* Physical Evidence */} 
-               <div style={{ marginBottom: '20px' }}> 
-                 <label style={{ fontSize: '11px', fontWeight: '700', color: theme.gray600, textTransform: 'uppercase' }}>Site Proof (IPFS Geotagged)</label> 
-                 <img src={selectedClaim.img} alt="proof" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px', marginTop: '8px' }} /> 
-               </div> 
-  
-               {/* Sentinel Verification Logic */} 
-               <div style={styles.verifyBox}> 
-                 <span style={styles.verifyLabel}>GPS Geofence (Allowed: 1km)</span> 
-                 <span style={styles.verifyStatus(parseFloat(selectedClaim.gpsDist) < 1)}>{selectedClaim.gpsDist} Mismatch</span> 
-               </div> 
-               <div style={styles.verifyBox}> 
-                 <span style={styles.verifyLabel}>Govt Tax API Handshake</span> 
-                 <span style={styles.verifyStatus(selectedClaim.apiMatch === 'Success')}>{selectedClaim.apiMatch}</span> 
-               </div> 
-  
-               {/* Action Cards */} 
-               <div style={styles.actionGrid}> 
-                 <button  
-                   style={styles.btnApprove}  
-                   onClick={() => alert(`Funds for ${selectedClaim.id} released via Escrow Vault.`)} 
-                 > 
-                   APPROVE 
-                 </button> 
-                 <button  
-                   style={styles.btnFreeze}  
-                   onClick={() => alert(`CRITICAL ALERT: Escrow Vault for project ${selectedClaim.project} has been FROZEN.`)} 
-                 > 
-                   FREEZE VAULT 
-                 </button> 
-               </div> 
-             </div> 
-           )} 
-         </div> 
-       </main> 
-     </div> 
-   ); 
- }; 
-  
- export default AuditorCommandCenter;
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const API = 'http://localhost:5000/api';
+const getToken = () => localStorage.getItem('token');
+const authHeader = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
+
+const AuditorCommandCenter = () => {
+  const [flaggedClaims, setFlaggedClaims] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [selectedClaim, setSelectedClaim] = useState(null);
+  const [reviewDetail, setReviewDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [resolving, setResolving] = useState(false);
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
+
+  const fetchAll = async () => {
+    try {
+      const [f, t] = await Promise.all([
+        axios.get(`${API}/auditor/flagged-transactions?limit=50`, authHeader()),
+        axios.get(`${API}/transactions?limit=50`, authHeader()),
+      ]);
+      if (f.data.success) setFlaggedClaims(f.data.data || []);
+      if (t.data.success) setAllTransactions(t.data.data || []);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
+
+  const fetchFlagged = fetchAll;
+
+  const investigateClaim = async (claim) => {
+    setSelectedClaim(claim);
+    setResolutionNote('');
+    try {
+      const res = await axios.get(`${API}/auditor/transactions/${claim.txnId}/review`, authHeader());
+      if (res.data.success) setReviewDetail(res.data.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleResolve = async (resolutionStatus) => {
+    if (!resolutionNote.trim()) {
+      alert('Please enter a resolution note before proceeding');
+      return;
+    }
+    setResolving(true);
+    try {
+      const res = await axios.post(
+        `${API}/auditor/transactions/${selectedClaim.txnId}/resolve`,
+        { resolutionStatus, resolutionNote },
+        authHeader()
+      );
+      if (res.data.success) {
+        alert(`✅ Resolution recorded: ${resolutionStatus}`);
+        setSelectedClaim(null);
+        setReviewDetail(null);
+        fetchFlagged();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to resolve');
+    } finally { setResolving(false); }
+  };
+
+  const theme = {
+    navy: '#0f1f3d', blueLight: '#2563eb', green: '#10b981',
+    amber: '#f59e0b', red: '#ef4444', gray50: '#f8fafc',
+    gray100: '#f1f5f9', gray200: '#e2e8f0', gray600: '#475569', text: '#1e293b',
+  };
+
+  const styles = {
+    container: { background: 'transparent', fontFamily: "'Sora', sans-serif" },
+    grid: { display: 'grid', gridTemplateColumns: selectedClaim ? '1fr 1fr' : '1fr', gap: 24, transition: 'all 0.3s' },
+    card: { background: 'white', borderRadius: 16, border: `1px solid ${theme.gray200}`, overflow: 'hidden' },
+    th: { background: theme.gray50, padding: '12px 16px', textAlign: 'left', fontSize: 11, color: theme.gray600, textTransform: 'uppercase', borderBottom: `1px solid ${theme.gray200}` },
+    td: { padding: 16, fontSize: 13, borderBottom: `1px solid ${theme.gray100}` },
+    panel: { background: 'white', borderRadius: 16, border: `2px solid ${theme.blueLight}`, padding: 24, position: 'sticky', top: 24 },
+    alertBanner: { background: 'rgba(239,68,68,0.08)', color: theme.red, padding: 12, borderRadius: 8, fontWeight: 600, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 },
+    verifyBox: { display: 'flex', justifyContent: 'space-between', padding: 12, background: theme.gray50, borderRadius: 8, marginBottom: 10 },
+    verifyLabel: { fontSize: 12, color: theme.gray600, fontWeight: 500 },
+    textarea: { width: '100%', padding: 10, border: `1.5px solid ${theme.gray200}`, borderRadius: 8, fontSize: 12, minHeight: 60, marginTop: 10, outline: 'none', resize: 'vertical', boxSizing: 'border-box' },
+    btnApprove: { flex: 1, padding: 12, background: theme.green, color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 12 },
+    btnFreeze: { flex: 1, padding: 12, background: theme.red, color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 12 },
+    btnDismiss: { flex: 1, padding: 12, background: theme.amber, color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontSize: 12 },
+  };
+
+  const displayed = activeTab === 'flagged' ? flaggedClaims : allTransactions;
+  const fmt = (n) => `₹ ${Number(n || 0).toLocaleString('en-IN')}`;
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center' }}>Loading Command Center...</div>;
+
+  return (
+    <div style={styles.container}>
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {[['all', `📋 All Transactions (${allTransactions.length})`, '#2563eb'],
+          ['flagged', `🚨 Flagged (${flaggedClaims.length})`, '#ef4444']].map(([k, l, c]) => (
+          <button key={k} onClick={() => setActiveTab(k)}
+            style={{ padding: '8px 18px', borderRadius: 8, border: `1.5px solid ${activeTab === k ? c : '#e2e8f0'}`,
+              background: activeTab === k ? c : 'white', color: activeTab === k ? 'white' : '#64748b',
+              fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div style={styles.grid}>
+        {/* Transaction List */}
+        <div style={styles.card}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Transaction ID</th>
+                <th style={styles.th}>Project</th>
+                <th style={styles.th}>Type</th>
+                <th style={styles.th}>Amount</th>
+                <th style={styles.th}>Sentinel</th>
+                <th style={styles.th}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {displayed.length === 0 ? (
+                <tr><td colSpan={6} style={{ padding: 30, textAlign: 'center', color: '#10b981' }}>
+                  {activeTab === 'flagged' ? '✅ No flagged transactions — system is clean' : '📭 No transactions yet'}
+                </td></tr>
+              ) : displayed.map((claim) => (
+                <tr key={claim._id}
+                  style={{ cursor: 'pointer', background: selectedClaim?._id === claim._id ? 'rgba(37,99,235,0.04)' : 'white', borderBottom: '1px solid #f1f5f9' }}
+                  onClick={() => investigateClaim(claim)}>
+                  <td style={{ ...styles.td, fontWeight: 700, color: theme.blueLight, fontFamily: 'monospace', fontSize: 11 }}>{claim.txnId}</td>
+                  <td style={{ ...styles.td, fontSize: 12, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{claim.projectNameSnapshot || '—'}</td>
+                  <td style={{ ...styles.td, fontSize: 11, textTransform: 'capitalize', color: '#64748b' }}>{(claim.type || '').replace('_', ' ')}</td>
+                  <td style={{ ...styles.td, fontWeight: 600 }}>{fmt(claim.amount)}</td>
+                  <td style={styles.td}>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+                      background: claim.sentinelStatus === 'flagged' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                      color: claim.sentinelStatus === 'flagged' ? theme.red : theme.green,
+                    }}>{claim.sentinelStatus || '—'}</span>
+                  </td>
+                  <td style={styles.td}>
+                    <button style={{ padding: '6px 12px', background: theme.gray100, border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                      Investigate
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Investigation Panel */}
+        {selectedClaim && (
+          <div style={styles.panel}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ fontWeight: 700, fontSize: 15 }}>Reviewing {selectedClaim.txnId}</h3>
+              <button onClick={() => { setSelectedClaim(null); setReviewDetail(null); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: theme.gray600 }}>✕ Close</button>
+            </div>
+
+            <div style={styles.alertBanner}>
+              <span>🚨 Sentinel Flag: {selectedClaim.sentinelStatus}</span>
+            </div>
+
+            {/* Verification Checks */}
+            <div style={styles.verifyBox}>
+              <span style={styles.verifyLabel}>Transaction Type</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>{selectedClaim.type}</span>
+            </div>
+            <div style={styles.verifyBox}>
+              <span style={styles.verifyLabel}>Amount</span>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>₹ {Number(selectedClaim.amount).toLocaleString('en-IN')}</span>
+            </div>
+            <div style={styles.verifyBox}>
+              <span style={styles.verifyLabel}>Status</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: theme.red }}>{selectedClaim.sentinelStatus}</span>
+            </div>
+
+            {/* Proof details if available */}
+            {reviewDetail?.proof && (
+              <>
+                <div style={{ ...styles.verifyBox, flexDirection: 'column', gap: 6 }}>
+                  <span style={{ ...styles.verifyLabel, fontWeight: 700 }}>GPS Geofence Check</span>
+                  <span style={{ fontSize: 12, color: reviewDetail.proof.distanceFromOfficialPinMeters > 500 ? theme.red : theme.green }}>
+                    {reviewDetail.proof.distanceFromOfficialPinMeters}m from official pin
+                  </span>
+                </div>
+                {reviewDetail.proof.sentinelReasons?.length > 0 && (
+                  <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: theme.red, marginBottom: 6 }}>🚩 Sentinel Flags:</div>
+                    {reviewDetail.proof.sentinelReasons.map((r, i) => <div key={i} style={{ fontSize: 11, color: '#475569', padding: '2px 0' }}>• {r}</div>)}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div style={{ marginTop: 12 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: theme.gray600 }}>Resolution Note (required)</label>
+              <textarea style={styles.textarea} placeholder="Enter rationale for your decision..." value={resolutionNote} onChange={e => setResolutionNote(e.target.value)} />
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <button style={styles.btnApprove} disabled={resolving} onClick={() => handleResolve('resolved')}>✅ Resolve</button>
+              <button style={styles.btnDismiss} disabled={resolving} onClick={() => handleResolve('escalated')}>⬆ Escalate</button>
+              <button style={styles.btnFreeze} disabled={resolving} onClick={() => handleResolve('dismissed')}>❌ Dismiss</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AuditorCommandCenter;

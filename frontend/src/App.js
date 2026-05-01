@@ -1,5 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
+
+// Admin
+import AdminLayout from "./components/AdminLayout";
 import Dashboard from "./pages/Admin/Dashboard";
 import ProjectList from "./pages/Admin/ProjectList";
 import FundRelease from "./pages/Admin/FundRelease";
@@ -8,7 +11,16 @@ import Transactions from "./pages/Admin/Transactions";
 import Reports from "./pages/Admin/Reports";
 import AdminAlerts from "./pages/Admin/Alerts";
 import Settings from "./pages/Admin/Settings";
+
+// Contractor
+import ContractorLayout from "./components/ContractorLayout";
 import ClaimSubmission from "./pages/Contractor/ClaimSubmission";
+import MySubmissions from "./pages/Contractor/MySubmissions";
+import MyProjects from "./pages/Contractor/MyProjects";
+import ContractorProfile from "./pages/Contractor/Profile";
+
+// Auditor
+import AuditorLayout from "./components/AuditorLayout";
 import AuditorDashboard from "./pages/Auditor/Dashboard";
 import CommandCenter from "./pages/Auditor/CommandCenter";
 import ReviewClaim from "./pages/Auditor/ReviewClaim";
@@ -16,8 +28,8 @@ import AuditReport from "./pages/Auditor/AuditReport";
 import AuditorReviews from "./pages/Auditor/Reviews";
 import AuditorAlerts from "./pages/Auditor/Alerts";
 import AuditorSettings from "./pages/Auditor/Settings";
-import AuditorLayout from "./components/AuditorLayout";
-import AdminLayout from "./components/AdminLayout";
+
+// Public
 import PublicLayout from "./components/PublicLayout";
 import PublicHome from "./pages/Public/Home";
 import Explorer from "./pages/Public/Explorer";
@@ -33,6 +45,7 @@ function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
 
+      {/* ── Admin ── */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
@@ -45,8 +58,16 @@ function App() {
         <Route path="settings" element={<Settings />} />
       </Route>
 
-      <Route path="/contractor/claim" element={<ClaimSubmission />} />
+      {/* ── Contractor ── */}
+      <Route path="/contractor" element={<ContractorLayout />}>
+        <Route index element={<Navigate to="claim" replace />} />
+        <Route path="claim" element={<ClaimSubmission />} />
+        <Route path="submissions" element={<MySubmissions />} />
+        <Route path="projects" element={<MyProjects />} />
+        <Route path="profile" element={<ContractorProfile />} />
+      </Route>
 
+      {/* ── Auditor ── */}
       <Route path="/auditor" element={<AuditorLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AuditorDashboard />} />
@@ -58,6 +79,7 @@ function App() {
         <Route path="settings" element={<AuditorSettings />} />
       </Route>
 
+      {/* ── Public ── */}
       <Route path="/public" element={<PublicLayout />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<PublicHome />} />

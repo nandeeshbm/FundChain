@@ -36,49 +36,48 @@ const milestoneItemSchema = Joi.object({
   title: Joi.string().trim().required(),
   description: Joi.string().trim().allow('').optional(),
   amount: Joi.number().positive().required(),
-  estimatedDeadline: Joi.date().iso().required(),
+  estimatedDeadline: Joi.alternatives().try(Joi.date(), Joi.string()).allow(null, '').optional(),
 });
 
 const createProjectSchema = Joi.object({
   projectName: Joi.string().trim().min(2).max(200).required(),
-  department: Joi.string().valid('PWD', 'Water Dept', 'Education', 'Others').required(),
-  otherDepartmentName: Joi.when('department', {
-    is: 'Others',
-    then: Joi.string().trim().min(2).required(),
-    otherwise: Joi.string().allow(null, '').optional(),
-  }),
-  contractorId: Joi.string().required(),
+  department: Joi.string().min(1).max(100).required(),
+  otherDepartmentName: Joi.string().allow(null, '').optional(),
+  contractorId: Joi.string().allow(null, '').optional(),
   totalBudget: Joi.number().positive().required(),
-  milestoneBreakdown: Joi.array().items(milestoneItemSchema).length(3).required(),
+  milestoneBreakdown: Joi.array().items(milestoneItemSchema).min(1).required(),
   officialLocation: Joi.object({
     latitude: Joi.number().min(-90).max(90).required(),
     longitude: Joi.number().min(-180).max(180).required(),
   }).required(),
-  allowedRadiusMeters: Joi.number().positive().required(),
+  allowedRadiusMeters: Joi.number().positive().allow(null).optional(),
   expectedSupplierIRNMin: Joi.number().allow(null).optional(),
   expectedSupplierIRNMax: Joi.number().allow(null).optional(),
   requiredProofs: Joi.object({
-    sitePhoto: Joi.boolean().required(),
-    materialReceipt: Joi.boolean().required(),
-    completionCertificate: Joi.boolean().required(),
-  }).required(),
+    sitePhoto: Joi.boolean(),
+    materialReceipt: Joi.boolean(),
+    completionCertificate: Joi.boolean(),
+  }).optional(),
 });
 
 const submitProofSchema = Joi.object({
-  ipfsPhotoUrl: Joi.string().uri().allow(null, '').optional(),
+  ipfsPhotoUrl: Joi.string().allow(null, '').optional(),
   ipfsPhotoCid: Joi.string().allow(null, '').optional(),
   gpsLatitude: Joi.number().min(-90).max(90).required(),
   gpsLongitude: Joi.number().min(-180).max(180).required(),
+  taxIRN: Joi.string().length(64).allow(null, '').optional(),
   uploadedProofs: Joi.object({
-    sitePhoto: Joi.boolean().required(),
-    materialReceipt: Joi.boolean().required(),
-    completionCertificate: Joi.boolean().required(),
-  }).required(),
-  receiptDocumentUrl: Joi.string().uri().allow(null, '').optional(),
-  completionCertificateUrl: Joi.string().uri().allow(null, '').optional(),
+    sitePhoto: Joi.boolean().optional(),
+    materialReceipt: Joi.boolean().optional(),
+    completionCertificate: Joi.boolean().optional(),
+  }).optional(),
+  receiptDocumentUrl: Joi.string().allow(null, '').optional(),
+  completionCertificateUrl: Joi.string().allow(null, '').optional(),
+  walletAddress: Joi.string().allow(null, '').optional(),
+  metaMaskSignature: Joi.string().allow(null, '').optional(),
   forensicMeta: Joi.object({
     imageHash: Joi.string().allow(null, '').optional(),
-    exifCapturedAt: Joi.date().iso().allow(null).optional(),
+    exifCapturedAt: Joi.alternatives().try(Joi.date().iso(), Joi.string()).allow(null, '').optional(),
     deviceInfo: Joi.string().allow(null, '').optional(),
     geoMatchResult: Joi.string().allow(null, '').optional(),
   }).optional(),
@@ -89,16 +88,16 @@ const releaseFundsSchema = Joi.object({
 });
 
 const resolveTransactionSchema = Joi.object({
-  resolutionStatus: Joi.string().valid('resolved', 'escalated', 'dismissed').required(),
-  resolutionNote: Joi.string().trim().min(5).required(),
+  resolutionStatus: Joi.string().valid('resolved', 'escalated', 'dismissed', 'frozen').required(),
+  resolutionNote: Joi.string().trim().min(3).required(),
 });
 
 const createVendorSchema = Joi.object({
   vendorName: Joi.string().trim().min(2).max(100).required(),
   companyName: Joi.string().trim().min(2).max(200).required(),
-  walletAddress: Joi.string().trim().required(),
+  walletAddress: Joi.string().trim().allow(null, '').optional(),
   email: Joi.string().email().required(),
-  phone: Joi.string().trim().min(10).max(15).required(),
+  phone: Joi.string().trim().min(7).max(20).required(),
   departmentTags: Joi.array().items(Joi.string().trim()).optional(),
   taxId: Joi.string().trim().allow('').optional(),
   notes: Joi.string().allow('').optional(),

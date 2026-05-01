@@ -14,9 +14,12 @@ let lastProcessedBlock = 0;
 const startEventListeners = async () => {
   try {
     const provider = getProvider();
+    if (!provider) {
+      console.log('EventListener: No RPC provider configured — blockchain event listening disabled');
+      return;
+    }
     const currentBlock = await provider.getBlockNumber();
 
-    // Load from DB if available
     const Project = require('../models/Project');
     const projects = await Project.find({
       contractAddress: { $ne: null },

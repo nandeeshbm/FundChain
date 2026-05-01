@@ -1,146 +1,215 @@
-import React, { useState } from 'react'; 
-  
- const ReviewTransaction = () => { 
-   const [comment, setComment] = useState(''); 
-  
-   // Technical Transaction Data
-   const txnData = { 
-     id: 'TXN1005', 
-     project: 'Road Construction (PJT001)', 
-     contractor: 'ABC Infra', 
-     type: 'Milestone Utilization', 
-     amount: '₹ 20,000', 
-     date: '23 May 2024', 
-     status: 'Flagged by AI', 
-     reason: 'High Amount + Location Mismatch' 
-   }; 
-  
-   const handleAction = (type) => { 
-     alert(`Action: ${type}. Finalizing forensic signature for the Robotic Vault...`); 
-   }; 
-  
-   return ( 
-     <div style={styles.container}> 
-       <style>{` 
-         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap'); 
-         :root { 
-           --navy: #0f1f3d; --blue-light: #2563eb; --purple: #7c3aed; 
-           --green: #10b981; --amber: #f59e0b; --red: #ef4444; 
-           --gray-200: #e2e8f0; --text: #1e293b; 
-         } 
-       `}</style> 
-  
-       <div style={styles.content}> 
-         <div style={styles.backLink}>← Back to Forensic Flagged List</div> 
-         <h2 style={styles.pageTitle}>Transaction Audit & Forensic Review</h2> 
-  
-         <div style={styles.reviewGrid}> 
-           {/* Section 1: Transaction Metadata (The Robotic Vault State) */} 
-           <div style={styles.card}> 
-             <div style={styles.cardTitle}>Vault Transaction Details</div> 
-             <DetailRow label="On-Chain Txn ID" value={txnData.id} isMono={true} /> 
-             <DetailRow label="Smart Contract Ref" value={txnData.project} /> 
-             <DetailRow label="Contractor Identity" value={txnData.contractor} /> 
-             <DetailRow label="Verification Type" value={txnData.type} /> 
-             <div style={styles.detailRow}> 
-               <span style={styles.detailLabel}>Disbursement Amount</span> 
-               <span style={{...styles.detailValue, fontSize: '16px', color: 'var(--text)'}}>{txnData.amount}</span> 
-             </div> 
-             <DetailRow label="Timestamp" value={txnData.date} /> 
-             <div style={styles.detailRow}> 
-               <span style={styles.detailLabel}>Security Status</span> 
-               <span style={styles.detailValue}><span style={styles.badgeFlagged}>🚩 Flagged by Guard</span></span> 
-             </div> 
-             <DetailRow label="Interdiction Reason" value={txnData.reason} color="var(--red)" /> 
-           </div> 
-  
-           {/* Section 2: Submitted Proof (The Un-fakeable Evidence) */} 
-           <div style={styles.card}> 
-             <div style={styles.cardTitle}>Un-fakeable Proof Submission</div> 
-             <div style={styles.proofGrid}> 
-               <div style={styles.proofImg}>🏗️</div> 
-               <div style={styles.proofImg}>🛣️</div> 
-               <div style={styles.proofImg}>🚧</div> 
-               <div style={styles.proofImg}>📷</div> 
-             </div> 
-              
-             <div style={styles.locationInfo}> 
-               <div style={styles.locTitle}>📍 Geospatial Witness (GPS)</div> 
-               <div style={styles.locVal}>22.5738° N, 88.3639° E</div> 
-               <div style={styles.locDate}>Submitted via Verified Mobile App: 10:15 AM</div> 
-             </div> 
-  
-             <div style={styles.remarksBox}> 
-               <div style={styles.remarksTitle}>⚠️ 24/7 Security Guard Remark</div> 
-               <div style={styles.remarksText}> 
-                 Anomaly Detected: Transaction amount exceeds milestone benchmark by 15%.  
-                 Visual GPS metadata does not align with the registered project perimeter. 
-               </div> 
-             </div> 
-           </div> 
-         </div> 
-  
-         {/* Section 3: Final Forensic Decision */} 
-         <div style={{...styles.card, marginTop: '20px'}}> 
-           <div style={styles.cardTitle}>Auditor Action: Secure Settlement</div> 
-           <div style={styles.actionBtns}> 
-             <button style={styles.btnApprove} onClick={() => handleAction('Approve')}>✅ Release Funds</button> 
-             <button style={styles.btnReject} onClick={() => handleAction('Reject')}>❌ Reject & Freeze Account</button> 
-             <button style={styles.btnMore} onClick={() => handleAction('Request Info')}>📩 Request Forensic Info</button> 
-           </div> 
-           <label style={styles.commentLabel}>Write Audit Comments (Optional)</label> 
-           <textarea  
-             style={styles.textarea}  
-             placeholder="Enter rationale for override or rejection here..." 
-             value={comment} 
-             onChange={(e) => setComment(e.target.value)} 
-           /> 
-         </div> 
-       </div> 
-     </div> 
-   ); 
- }; 
-  
- // Helper Component for Details 
- const DetailRow = ({ label, value, isMono, color }) => ( 
-   <div style={styles.detailRow}> 
-     <span style={styles.detailLabel}>{label}</span> 
-     <span style={{ 
-      ...styles.detailValue,  
-       fontFamily: isMono? 'monospace' : 'inherit', 
-       color: color || 'var(--text)' 
-     }}>{value}</span> 
-   </div> 
- ); 
-  
- // JSS Object 
- const styles = { 
-   container: { fontFamily: "'Sora', sans-serif", background: '#f8fafc', minHeight: '100vh' }, 
-   content: { padding: '24px 28px' }, 
-   backLink: { fontSize: '13px', color: '#2563eb', cursor: 'pointer', marginBottom: '20px' }, 
-   pageTitle: { fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '20px' }, 
-   reviewGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }, 
-   card: { background: 'white', borderRadius: '14px', padding: '24px', border: '1px solid #e2e8f0' }, 
-   cardTitle: { fontSize: '15px', fontWeight: '700', color: '#1e293b', marginBottom: '18px' }, 
-   detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }, 
-   detailLabel: { fontSize: '12px', color: '#94a3b8', fontWeight: '500' }, 
-   detailValue: { fontSize: '13px', fontWeight: '600', textAlign: 'right', maxWidth: '60%' }, 
-   badgeFlagged: { background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' }, 
-   proofGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }, 
-   proofImg: { width: '100%', height: '120px', borderRadius: '8px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }, 
-   locationInfo: { background: '#f8fafc', borderRadius: '10px', padding: '14px', border: '1px solid #e2e8f0' }, 
-   locTitle: { fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }, 
-   locVal: { fontSize: '13px', fontWeight: '600', color: '#1e293b' }, 
-   locDate: { fontSize: '11px', color: '#94a3b8', marginTop: '4px' }, 
-   remarksBox: { background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '14px', marginTop: '16px' }, 
-   remarksTitle: { fontSize: '12px', fontWeight: '700', color: '#ef4444', marginBottom: '6px' }, 
-   remarksText: { fontSize: '13px', color: '#475569', lineHeight: '1.6' }, 
-   actionBtns: { display: 'flex', gap: '10px', flexWrap: 'wrap' }, 
-   btnApprove: { padding: '11px 24px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }, 
-   btnReject: { padding: '11px 24px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }, 
-   btnMore: { padding: '11px 24px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', cursor: 'pointer' }, 
-   textarea: { width: '100%', padding: '12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', minHeight: '80px', marginTop: '14px', outline: 'none' }, 
-   commentLabel: { fontSize: '12px', fontWeight: '600', color: '#475569', marginTop: '16px', display: 'block' }, 
- }; 
-  
- export default ReviewTransaction;
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const API = 'http://localhost:5000/api';
+const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+
+export default function ReviewClaim() {
+  const [transactions, setTransactions] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [note, setNote] = useState('');
+  const [resolving, setResolving] = useState(false);
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await axios.get(`${API}/transactions?limit=50`, authHeader());
+        if (res.data.success) setTransactions(res.data.data || []);
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    };
+    fetch();
+  }, []);
+
+  const viewDetail = async (txn) => {
+    setSelected(txn);
+    setDetail(null);
+    setNote('');
+    setDetailLoading(true);
+    try {
+      const res = await axios.get(`${API}/auditor/transactions/${txn.txnId}/review`, authHeader());
+      if (res.data.success) setDetail(res.data.data);
+    } catch (err) { console.error(err); }
+    finally { setDetailLoading(false); }
+  };
+
+  const resolve = async (status) => {
+    if (!note.trim()) return alert('Enter a resolution note');
+    setResolving(true);
+    try {
+      await axios.post(`${API}/auditor/transactions/${selected.txnId}/resolve`,
+        { resolutionStatus: status, resolutionNote: note }, authHeader());
+      alert(`✅ ${status === 'resolved' ? 'Approved' : 'Flagged'} successfully`);
+      setSelected(null); setDetail(null); setNote('');
+      const res = await axios.get(`${API}/transactions?limit=50`, authHeader());
+      if (res.data.success) setTransactions(res.data.data || []);
+    } catch (e) { alert(e.response?.data?.message || 'Failed'); }
+    finally { setResolving(false); }
+  };
+
+  const fmt = (n) => `₹ ${Number(n || 0).toLocaleString('en-IN')}`;
+  const filtered = filter === 'all' ? transactions
+    : transactions.filter(t => t.sentinelStatus === filter || t.status === filter);
+
+  const sc = (s) => ({
+    flagged: { bg: 'rgba(239,68,68,0.1)', col: '#ef4444' },
+    success: { bg: 'rgba(16,185,129,0.1)', col: '#10b981' },
+    pending: { bg: 'rgba(245,158,11,0.1)', col: '#f59e0b' },
+  }[s] || { bg: '#f1f5f9', col: '#94a3b8' });
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Loading transactions...</div>;
+
+  return (
+    <div style={{ fontFamily: "'Sora', sans-serif" }}>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1e293b', margin: 0 }}>Transaction Audit & Forensic Review</h2>
+        <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>Click "View" to inspect any transaction and take resolution action</p>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {[['all', 'All'], ['flagged', '🚩 Flagged'], ['success', '✅ Success'], ['pending', '⏳ Pending']].map(([k, l]) => (
+          <button key={k} onClick={() => setFilter(k)}
+            style={{ padding: '7px 16px', borderRadius: 8, border: '1.5px solid', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              borderColor: filter === k ? '#2563eb' : '#e2e8f0',
+              background: filter === k ? '#2563eb' : 'white',
+              color: filter === k ? 'white' : '#64748b' }}>
+            {l}
+          </button>
+        ))}
+        <div style={{ marginLeft: 'auto', color: '#94a3b8', fontSize: 12, alignSelf: 'center' }}>{filtered.length} transactions</div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: selected ? '1.1fr 1fr' : '1fr', gap: 20 }}>
+        {/* Table */}
+        <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['Txn ID', 'Project', 'Type', 'Amount', 'Sentinel', 'Status', 'Time', ''].map(h => (
+                  <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 10, color: '#94a3b8', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase', fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr><td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>No transactions found</td></tr>
+              ) : filtered.map(t => {
+                const s = sc(t.sentinelStatus);
+                const ts = sc(t.status);
+                return (
+                  <tr key={t._id} style={{ borderBottom: '1px solid #f1f5f9', background: selected?._id === t._id ? '#eff6ff' : 'white' }}>
+                    <td style={{ padding: '12px 14px', fontFamily: 'monospace', fontSize: 11, color: '#2563eb', fontWeight: 700 }}>{t.txnId}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 12, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.projectNameSnapshot || '—'}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 11, color: '#64748b', textTransform: 'capitalize' }}>{(t.type || '').replace('_', ' ')}</td>
+                    <td style={{ padding: '12px 14px', fontSize: 12, fontWeight: 700, color: '#1e293b' }}>{fmt(t.amount)}</td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: s.bg, color: s.col }}>{t.sentinelStatus || '—'}</span>
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <span style={{ padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700, background: ts.bg, color: ts.col }}>{t.status}</span>
+                    </td>
+                    <td style={{ padding: '12px 14px', fontSize: 11, color: '#94a3b8' }}>
+                      {t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN') : '—'}
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <button onClick={() => viewDetail(t)}
+                        style={{ padding: '5px 12px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Detail Panel */}
+        {selected && (
+          <div style={{ background: 'white', borderRadius: 14, border: '2px solid #2563eb', padding: 20, position: 'sticky', top: 24, alignSelf: 'start', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#1e293b' }}>🔍 Transaction Detail</span>
+              <button onClick={() => { setSelected(null); setDetail(null); }}
+                style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+            </div>
+
+            {detailLoading ? (
+              <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Loading detail...</div>
+            ) : detail ? (
+              <>
+                {/* Transaction info */}
+                {[
+                  ['Txn ID', detail.transaction?.txnId],
+                  ['Project', detail.transaction?.projectNameSnapshot],
+                  ['Type', (detail.transaction?.type || '').replace('_', ' ')],
+                  ['Amount', fmt(detail.transaction?.amount)],
+                  ['Sentinel', detail.transaction?.sentinelStatus],
+                  ['Status', detail.transaction?.status],
+                  ['On-Chain Hash', detail.transaction?.onChainTxnHash ? detail.transaction.onChainTxnHash.slice(0, 16) + '...' : 'Off-chain'],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f1f5f9', fontSize: 12 }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>{k}</span>
+                    <span style={{ fontWeight: 700, color: '#1e293b', fontFamily: k.includes('Hash') ? 'monospace' : 'inherit' }}>{v || '—'}</span>
+                  </div>
+                ))}
+
+                {/* Proof submission */}
+                {detail.proof && (
+                  <div style={{ marginTop: 14, padding: 12, background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', marginBottom: 10 }}>📸 Submitted Proof</div>
+                    {[
+                      ['GPS Location', `${detail.proof.gpsLatitude?.toFixed(4) || '—'}°N, ${detail.proof.gpsLongitude?.toFixed(4) || '—'}°E`],
+                      ['Distance from Site', `${detail.proof.distanceFromPin || 0}m`],
+                      ['Site Photo', detail.proof.uploadedProofs?.sitePhoto ? '✅ Uploaded' : '❌ Missing'],
+                      ['Material Receipt', detail.proof.uploadedProofs?.materialReceipt ? '✅ Uploaded' : '❌ Missing'],
+                      ['Completion Cert', detail.proof.uploadedProofs?.completionCertificate ? '✅ Uploaded' : '❌ Missing'],
+                      ['IPFS CID', detail.proof.ipfsPhotoCid || '—'],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', fontSize: 11 }}>
+                        <span style={{ color: '#64748b' }}>{k}</span>
+                        <span style={{ fontWeight: 600, color: '#1e293b' }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Sentinel flags */}
+                {detail.flagReasons?.length > 0 && (
+                  <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: 12, marginTop: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#ef4444', marginBottom: 6 }}>🚩 Sentinel Flag Reasons</div>
+                    {detail.flagReasons.map((r, i) => <div key={i} style={{ fontSize: 11, color: '#475569', padding: '2px 0' }}>• {r}</div>)}
+                  </div>
+                )}
+
+                {/* Resolution */}
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Resolution Note *</div>
+                  <textarea value={note} onChange={e => setNote(e.target.value)}
+                    placeholder="Reason for your decision..."
+                    style={{ width: '100%', padding: 10, border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 12, minHeight: 60, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button disabled={resolving} onClick={() => resolve('resolved')}
+                      style={{ flex: 1, padding: 10, background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
+                      ✅ Approve
+                    </button>
+                    <button disabled={resolving} onClick={() => resolve('frozen')}
+                      style={{ flex: 1, padding: 10, background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>
+                      🔒 Freeze
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Failed to load detail</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

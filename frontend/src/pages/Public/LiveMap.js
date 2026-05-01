@@ -1,124 +1,138 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-function LiveMap() {
-  const navigate = useNavigate();
-  const sites = useMemo(
-    () => [
-      {
-        id: "PJT201",
-        name: "Community Health Center - Andheri",
-        lat: 19.1334,
-        lng: 72.8397,
-        funds: "INR 2.00 Cr",
-        progress: "60%",
-        status: "In Progress",
-        docs: ["Tender Copy", "Geo Proof Pack", "Milestone Invoice"],
-      },
-      {
-        id: "PJT202",
-        name: "Primary School Upgrade - Kurla",
-        lat: 19.0728,
-        lng: 72.8826,
-        funds: "INR 1.20 Cr",
-        progress: "42%",
-        status: "In Progress",
-        docs: ["Work Order", "Material Checklist"],
-      },
-      {
-        id: "PJT203",
-        name: "Road Repair Cluster - Borivali",
-        lat: 19.2290,
-        lng: 72.8579,
-        funds: "INR 3.70 Cr",
-        progress: "78%",
-        status: "Active",
-        docs: ["Road Test Report", "Drone Snapshot Set"],
-      },
-    ],
-    []
-  );
+const API = 'http://localhost:5000/api';
+const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
 
-  const [selected, setSelected] = useState(sites[0]);
+export default function LiveMap() {
+  const [projects, setProjects] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=72.70,19.00,73.00,19.30&layer=mapnik&marker=${selected.lat},${selected.lng}`;
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await axios.get(`${API}/public/projects?limit=50`);
+        if (res.data.success && res.data.data?.length > 0) {
+          const valid = res.data.data.filter(p => p.officialLocation?.latitude && p.officialLocation?.longitude);
+          setProjects(valid);
+          if (valid.length > 0) setSelected(valid[0]);
+        }
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
+    };
+    fetch();
+  }, []);
+
+  const fmt = (n) => `₹ ${Number(n || 0).toLocaleString('en-IN')}`;
+
+  const mapUrl = selected
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${selected.officialLocation.longitude - 0.05},${selected.officialLocation.latitude - 0.05},${selected.officialLocation.longitude + 0.05},${selected.officialLocation.latitude + 0.05}&layer=mapnik&marker=${selected.officialLocation.latitude},${selected.officialLocation.longitude}`
+    : `https://www.openstreetmap.org/export/embed.html?bbox=72.70,19.00,73.00,19.30&layer=mapnik`;
+
+  const statusColor = (s) => ({
+    active: { bg: 'rgba(16,185,129,0.1)', col: '#10b981' },
+    in_progress: { bg: 'rgba(37,99,235,0.1)', col: '#2563eb' },
+    completed: { bg: 'rgba(16,185,129,0.15)', col: '#059669' },
+  }[s] || { bg: '#f1f5f9', col: '#94a3b8' });
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <h2 style={styles.title}>Live Construction Map</h2>
-        <p style={styles.sub}>Click a project to focus map location and inspect dummy funding proofs.</p>
+    <div style={{ fontFamily: "'Sora', sans-serif" }}>
+      <div style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', margin: 0 }}>🗺️ Live Construction Map</h2>
+        <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
+          {loading ? 'Loading projects...' : projects.length === 0
+            ? 'No active projects with GPS coordinates yet'
+            : `${projects.length} active project${projects.length > 1 ? 's' : ''} on the map`}
+        </p>
       </div>
 
-      <div style={styles.layout}>
-        <div style={styles.mapCard}>
-          <iframe title="live-construction-map" src={mapUrl} style={styles.iframe} loading="lazy" />
+      {projects.length === 0 && !loading ? (
+        <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', padding: '60px 24px', textAlign: 'center', color: '#94a3b8' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>No projects on the map yet</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Create a project with GPS coordinates to see it here</div>
         </div>
-
-        <div style={styles.sideCard}>
-          <div style={styles.sideTitle}>Active Sites</div>
-          <div style={styles.siteList}>
-            {sites.map((site) => (
-              <button
-                key={site.id}
-                type="button"
-                onClick={() => setSelected(site)}
-                style={{ ...styles.siteBtn, ...(selected.id === site.id ? styles.siteBtnActive : {}) }}
-              >
-                <div style={styles.siteName}>{site.name}</div>
-                <div style={styles.siteMeta}>{site.id} | {site.status}</div>
-              </button>
-            ))}
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, minHeight: '72vh' }}>
+          {/* Map */}
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
+            <iframe
+              key={selected?._id}
+              title="live-construction-map"
+              src={mapUrl}
+              style={{ width: '100%', height: '100%', minHeight: 520, border: 'none' }}
+              loading="lazy"
+            />
           </div>
 
-          <div style={styles.detailBox}>
-            <div style={styles.row}><span style={styles.k}>Project:</span><span style={styles.v}>{selected.id}</span></div>
-            <div style={styles.row}><span style={styles.k}>Allocated:</span><span style={styles.v}>{selected.funds}</span></div>
-            <div style={styles.row}><span style={styles.k}>Progress:</span><span style={styles.v}>{selected.progress}</span></div>
-            <div style={styles.row}><span style={styles.k}>Coordinates:</span><span style={styles.v}>{selected.lat}, {selected.lng}</span></div>
-            <div style={{ marginTop: 12 }}>
-              <div style={styles.k}>Proof Documents</div>
-              {selected.docs.map((d) => (
-                <button key={d} type="button" style={styles.docBtn} onClick={() => alert(`${d} opened (dummy).`)}>
-                  View {d}
-                </button>
-              ))}
+          {/* Sidebar */}
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 14, background: '#fff', padding: 16, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'hidden' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Active Projects</div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 230, overflowY: 'auto' }}>
+              {projects.map(p => {
+                const sc = statusColor(p.status);
+                return (
+                  <button key={p._id} type="button" onClick={() => setSelected(p)}
+                    style={{ textAlign: 'left', border: `1.5px solid ${selected?._id === p._id ? '#2563eb' : '#e2e8f0'}`,
+                      borderRadius: 10, background: selected?._id === p._id ? '#eff6ff' : '#f8fafc',
+                      padding: '10px 12px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                    <div style={{ fontWeight: 700, color: '#1e293b', fontSize: 12 }}>{p.projectName}</div>
+                    <div style={{ color: '#64748b', fontSize: 11, marginTop: 3, display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span>{p.projectId}</span>
+                      <span style={{ padding: '1px 6px', borderRadius: 8, background: sc.bg, color: sc.col, fontSize: 10, fontWeight: 700 }}>{p.status}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          </div>
 
-          <div style={styles.actions}>
-            <button type="button" style={styles.secondary} onClick={() => alert("Shared current map location (dummy).")}>Share Site</button>
-            <button type="button" style={styles.primary} onClick={() => navigate(`/public/project-details/${selected.id}`)}>Open Details</button>
+            {selected && (
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 12, background: '#f8fafc', flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', marginBottom: 10 }}>{selected.projectName}</div>
+                {[
+                  ['Project ID', selected.projectId],
+                  ['Department', selected.department],
+                  ['Total Budget', fmt(selected.totalBudget)],
+                  ['Released', fmt(selected.releasedAmount)],
+                  ['Remaining', fmt(selected.remainingAmount)],
+                  ['Lat/Lng', `${selected.officialLocation.latitude}°N, ${selected.officialLocation.longitude}°E`],
+                  ['Radius', `${selected.allowedRadiusMeters || 500}m`],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #f1f5f9', fontSize: 11 }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>{k}</span>
+                    <span style={{ fontWeight: 700, color: '#1e293b', textAlign: 'right', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>{v}</span>
+                  </div>
+                ))}
+
+                {/* Progress */}
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', marginBottom: 4 }}>
+                    <span>Progress</span>
+                    <span>{selected.progress || 0}%</span>
+                  </div>
+                  <div style={{ height: 6, background: '#e2e8f0', borderRadius: 4 }}>
+                    <div style={{ height: '100%', width: `${selected.progress || 0}%`, background: 'linear-gradient(90deg, #2563eb, #1d4ed8)', borderRadius: 4 }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                  <button type="button"
+                    onClick={() => window.open(`https://www.openstreetmap.org/?mlat=${selected.officialLocation.latitude}&mlon=${selected.officialLocation.longitude}#map=15/${selected.officialLocation.latitude}/${selected.officialLocation.longitude}`, '_blank')}
+                    style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: 8, background: '#fff', padding: '9px 0', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                    🔗 Open Map
+                  </button>
+                  <a href={`/public/project-details/${selected.projectId}`}
+                    style={{ flex: 1, border: 'none', borderRadius: 8, background: '#2563eb', color: '#fff', padding: '9px 0', cursor: 'pointer', fontWeight: 700, fontSize: 11, textAlign: 'center', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    📋 Details
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
-
-const styles = {
-  page: { padding: 24, fontFamily: "'Sora', sans-serif" },
-  header: { marginBottom: 12 },
-  title: { margin: 0, color: "#1e293b" },
-  sub: { margin: "6px 0 0", color: "#64748b", fontSize: "0.9rem" },
-  layout: { display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14, minHeight: "72vh" },
-  mapCard: { border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden", background: "#fff" },
-  iframe: { width: "100%", height: "100%", minHeight: 540, border: "none" },
-  sideCard: { border: "1px solid #e2e8f0", borderRadius: 14, background: "#fff", padding: 14, display: "flex", flexDirection: "column", gap: 10 },
-  sideTitle: { fontSize: "0.95rem", fontWeight: 700, color: "#1e293b" },
-  siteList: { display: "flex", flexDirection: "column", gap: 8, maxHeight: 200, overflow: "auto" },
-  siteBtn: { textAlign: "left", border: "1px solid #e2e8f0", borderRadius: 10, background: "#f8fafc", padding: "10px 12px", cursor: "pointer" },
-  siteBtnActive: { borderColor: "#93c5fd", background: "#eff6ff" },
-  siteName: { fontWeight: 700, color: "#1e293b", fontSize: "0.85rem" },
-  siteMeta: { color: "#64748b", fontSize: "0.75rem", marginTop: 3 },
-  detailBox: { border: "1px solid #e2e8f0", borderRadius: 10, padding: 12, background: "#f8fafc" },
-  row: { display: "flex", justifyContent: "space-between", marginBottom: 6, gap: 10 },
-  k: { color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 700 },
-  v: { color: "#1e293b", fontSize: "0.85rem", fontWeight: 700, textAlign: "right" },
-  docBtn: { width: "100%", marginTop: 6, border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", padding: "8px 10px", fontSize: "0.78rem", cursor: "pointer", textAlign: "left" },
-  actions: { display: "flex", gap: 8, marginTop: "auto" },
-  secondary: { flex: 1, border: "1px solid #cbd5e1", borderRadius: 10, background: "#fff", padding: "10px 12px", cursor: "pointer" },
-  primary: { flex: 1, border: "none", borderRadius: 10, background: "#2563eb", color: "#fff", padding: "10px 12px", cursor: "pointer", fontWeight: 700 },
-};
-
-export default LiveMap;

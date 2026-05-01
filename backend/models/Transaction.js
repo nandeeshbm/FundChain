@@ -33,7 +33,7 @@ const TransactionSchema = new mongoose.Schema({
   confirmations: { type: Number, default: 0 },
 }, { timestamps: true });
 
-TransactionSchema.index({ txnId: 1 });
+// txnId index auto-created by unique: true
 TransactionSchema.index({ projectId: 1 });
 TransactionSchema.index({ status: 1 });
 TransactionSchema.index({ type: 1 });

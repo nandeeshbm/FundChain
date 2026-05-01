@@ -15,7 +15,7 @@ const UserSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
-UserSchema.index({ email: 1 });
+// email index is auto-created by unique: true
 UserSchema.index({ role: 1 });
 
 UserSchema.pre('save', async function (next) {

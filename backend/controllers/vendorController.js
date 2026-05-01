@@ -7,10 +7,12 @@ const createVendor = async (req, res, next) => {
   try {
     const { vendorName, companyName, walletAddress, email, phone, departmentTags, taxId, notes } = req.body;
 
-    // Check duplicate wallet or email
-    const existing = await Vendor.findOne({ $or: [{ walletAddress }, { email }] });
+    // Check duplicate email (walletAddress optional)
+    const orConditions = [{ email }];
+    if (walletAddress) orConditions.push({ walletAddress });
+    const existing = await Vendor.findOne({ $or: orConditions });
     if (existing) {
-      return apiResponse.error(res, 'Vendor with this wallet address or email already exists', [], 409);
+      return apiResponse.error(res, 'Vendor with this email or wallet address already exists', [], 409);
     }
 
     const vendor = new Vendor({
@@ -102,7 +104,11 @@ const getVendorById = async (req, res, next) => {
 // PUT /api/admin/vendors/:id — Update vendor
 const updateVendor = async (req, res, next) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const isObjectId = require('mongoose').Types.ObjectId.isValid(req.params.registryId);
+    const vendor = isObjectId
+      ? await Vendor.findById(req.params.registryId)
+      : await Vendor.findOne({ registryId: req.params.registryId });
+
     if (!vendor) {
       return apiResponse.error(res, 'Vendor not found', [], 404);
     }
@@ -143,7 +149,10 @@ const updateVendor = async (req, res, next) => {
 // PUT /api/admin/vendors/:id/suspend — Suspend vendor
 const suspendVendor = async (req, res, next) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const isObjectId = require('mongoose').Types.ObjectId.isValid(req.params.id);
+    const vendor = isObjectId
+      ? await Vendor.findById(req.params.id)
+      : await Vendor.findOne({ registryId: req.params.id });
     if (!vendor) return apiResponse.error(res, 'Vendor not found', [], 404);
 
     const oldStatus = vendor.status;
@@ -173,7 +182,10 @@ const suspendVendor = async (req, res, next) => {
 // PUT /api/admin/vendors/:id/block — Block vendor
 const blockVendor = async (req, res, next) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const isObjectId = require('mongoose').Types.ObjectId.isValid(req.params.id);
+    const vendor = isObjectId
+      ? await Vendor.findById(req.params.id)
+      : await Vendor.findOne({ registryId: req.params.id });
     if (!vendor) return apiResponse.error(res, 'Vendor not found', [], 404);
 
     const oldStatus = vendor.status;

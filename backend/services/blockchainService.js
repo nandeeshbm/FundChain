@@ -8,19 +8,25 @@ try {
   const artifact = require('../../blockchain/artifacts/contracts/EscrowVault.sol/EscrowVault.json');
   escrowVaultBytecode = artifact.bytecode;
 } catch (err) {
-  console.warn('BlockchainService: EscrowVault artifact not found. Deployment will use placeholder.');
+  console.warn('BlockchainService: EscrowVault artifact not found. Using mock deployment mode.');
 }
 
-// Provider and signer setup
+// Provider setup — returns null if no RPC configured
 const getProvider = () => {
-  return new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
+  if (!SEPOLIA_RPC_URL) return null;
+  // Use StaticNetwork to skip auto-detect (avoids hang if RPC is slow)
+  return new ethers.JsonRpcProvider(SEPOLIA_RPC_URL, {
+    chainId: 11155111,
+    name: 'sepolia',
+  });
 };
 
 const getSigner = () => {
   if (!DEPLOYER_PRIVATE_KEY) {
-    throw new Error('DEPLOYER_PRIVATE_KEY not configured');
+    throw new Error('DEPLOYER_PRIVATE_KEY not configured — blockchain writes disabled');
   }
   const provider = getProvider();
+  if (!provider) throw new Error('No RPC provider available');
   return new ethers.Wallet(DEPLOYER_PRIVATE_KEY, provider);
 };
 
@@ -54,7 +60,9 @@ const deployEscrowVault = async (projectId, contractorWalletAddress, totalBudget
     // Create project on-chain with ETH value representing the budget
     // Using Wei as a representation layer (1 INR = 1 Wei for tracking purposes)
     const budgetInWei = ethers.parseUnits(totalBudget.toString(), 'wei');
-    const createTx = await contract.createProject(projectId, contractorWalletAddress, {
+    const milestoneAmountsInWei = milestoneAmounts.map(a => ethers.parseUnits(a.toString(), 'wei'));
+    
+    const createTx = await contract.createProject(projectId, contractorWalletAddress, milestoneAmountsInWei, {
       value: budgetInWei,
     });
     await createTx.wait();
@@ -89,6 +97,8 @@ const getVaultState = async (contractAddress, projectId) => {
       releasedAmount: Number(projectData.releasedAmount),
       contractor: projectData.contractor,
       exists: projectData.exists,
+      isFrozen: projectData.isFrozen,
+      milestoneCount: Number(projectData.milestoneCount),
       remainingBalance: Number(balance),
     };
   } catch (err) {
@@ -98,46 +108,50 @@ const getVaultState = async (contractAddress, projectId) => {
 };
 
 /**
- * Trigger on-chain fund release for a specific milestone.
+ * Release milestone funds on-chain.
  */
-const releaseMilestoneFunds = async (contractAddress, projectId, amount, recipientWalletAddress) => {
+const releaseMilestoneFunds = async (contractAddress, projectId, milestoneIndex, proofHash) => {
   try {
     const signer = getSigner();
     const contract = new ethers.Contract(contractAddress, escrowVaultAbi, signer);
 
-    const amountInWei = ethers.parseUnits(amount.toString(), 'wei');
-    const tx = await contract.releaseFunds(projectId, amountInWei);
+    const tx = await contract.releaseFunds(projectId, milestoneIndex, proofHash);
     const receipt = await tx.wait();
 
     return {
       txHash: receipt.hash,
       blockNumber: receipt.blockNumber,
-      status: 'success',
     };
   } catch (err) {
     console.error('BlockchainService: releaseMilestoneFunds failed:', err.message);
-    // Return mock for development
-    return {
-      txHash: `0x${'release'.padEnd(64, '0')}`,
-      blockNumber: 0,
-      status: 'success',
-    };
+    throw err;
   }
 };
 
 /**
- * Get explorer URL for a transaction hash.
+ * Freeze/Unfreeze project on-chain.
  */
-const getExplorerUrl = (txHash) => {
-  return `${EXPLORER_BASE_URL}/tx/${txHash}`;
+const setProjectFreezeStatus = async (contractAddress, projectId, frozen) => {
+  try {
+    const signer = getSigner();
+    const contract = new ethers.Contract(contractAddress, escrowVaultAbi, signer);
+
+    const tx = await contract.freezeProject(projectId, frozen);
+    const receipt = await tx.wait();
+
+    return {
+      txHash: receipt.hash,
+      blockNumber: receipt.blockNumber,
+    };
+  } catch (err) {
+    console.error('BlockchainService: setProjectFreezeStatus failed:', err.message);
+    throw err;
+  }
 };
 
 module.exports = {
   deployEscrowVault,
   getVaultState,
   releaseMilestoneFunds,
-  getProvider,
-  getSigner,
-  getExplorerUrl,
-  escrowVaultAbi,
+  setProjectFreezeStatus,
 };

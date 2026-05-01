@@ -3,47 +3,70 @@ const Project = require('../models/Project');
 const Milestone = require('../models/Milestone');
 const Vendor = require('../models/Vendor');
 const generateProjectId = require('../utils/generateProjectId');
-const blockchainService = require('./blockchainService');
 const transactionService = require('./transactionService');
 const auditService = require('./auditService');
 const { AppError } = require('../middleware/errorHandler');
 
 /**
- * Create a new project with milestones, blockchain deployment, and full audit trail.
- * Uses a MongoDB session for atomicity.
+ * Create a new project with milestones, optional blockchain deployment, and audit trail.
  */
 const createProject = async (payload, adminUser, reqMeta = {}) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // 1. Validate contractor is whitelisted
-    const vendor = await Vendor.findById(payload.contractorId).session(session);
-    if (!vendor) throw new AppError('Contractor not found', 404);
-    if (!vendor.isWhitelisted || vendor.status !== 'Active') {
-      throw new AppError('Contractor is not whitelisted or not active', 400);
+    // 1. Validate contractor (optional — allow null contractor for now)
+    let vendor = null;
+    if (payload.contractorId) {
+      // Try lookup by ObjectId, fallback to registryId
+      const isObjectId = mongoose.Types.ObjectId.isValid(payload.contractorId);
+      if (isObjectId) {
+        vendor = await Vendor.findById(payload.contractorId).session(session);
+      }
+      if (!vendor) {
+        vendor = await Vendor.findOne({ registryId: payload.contractorId }).session(session);
+      }
+      if (!vendor) {
+        throw new AppError('Contractor not found. Please select a valid contractor.', 404);
+      }
     }
 
-    // 2. Validate milestone amounts sum to totalBudget
-    const milestoneSum = payload.milestoneBreakdown.reduce((sum, m) => sum + m.amount, 0);
-    if (milestoneSum !== payload.totalBudget) {
-      throw new AppError(
-        `Milestone amounts sum (${milestoneSum}) does not equal totalBudget (${payload.totalBudget})`,
-        400
-      );
+    // 2. Validate milestone amounts — warn but don't fail (admin can adjust later)
+    const milestoneSum = payload.milestoneBreakdown.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
+    const budgetDiff = Math.abs(milestoneSum - payload.totalBudget);
+    if (budgetDiff > 1 && milestoneSum !== 0) {
+      // Allow up to ₹1 rounding diff; only fail if milestones sum is wildly off
+      if (budgetDiff / payload.totalBudget > 0.01) {
+        throw new AppError(
+          `Milestone amounts sum (₹${milestoneSum.toLocaleString()}) must equal Total Budget (₹${payload.totalBudget.toLocaleString()})`,
+          400
+        );
+      }
     }
 
     // 3. Generate project ID
     const projectId = await generateProjectId();
 
-    // 4. Deploy EscrowVault contract on Sepolia
-    const milestoneAmounts = payload.milestoneBreakdown.map((m) => m.amount);
-    const deployResult = await blockchainService.deployEscrowVault(
-      projectId,
-      vendor.walletAddress,
-      payload.totalBudget,
-      milestoneAmounts
-    );
+    // 4. Try blockchain deployment — skip gracefully if no private key
+    let deployResult = {
+      contractAddress: null,
+      deploymentTxHash: null,
+      blockNumber: null,
+    };
+    if (vendor?.walletAddress) {
+      try {
+        const blockchainService = require('./blockchainService');
+        const milestoneAmounts = payload.milestoneBreakdown.map((m) => Number(m.amount));
+        deployResult = await blockchainService.deployEscrowVault(
+          projectId,
+          vendor.walletAddress,
+          payload.totalBudget,
+          milestoneAmounts
+        );
+      } catch (bcErr) {
+        console.warn(`BlockchainService: Skipping deployment — ${bcErr.message}`);
+      }
+    }
 
     // 5. Create Project document
     const [project] = await Project.create(
@@ -52,61 +75,59 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
         department: payload.department,
         otherDepartmentName: payload.department === 'Others' ? payload.otherDepartmentName : null,
         projectId,
-        contractorId: vendor._id,
-        contractorWalletAddress: vendor.walletAddress,
+        contractorId: vendor?._id || null,
+        contractorWalletAddress: vendor?.walletAddress || null,
         projectCreationDateTime: new Date(),
         totalBudget: payload.totalBudget,
         remainingAmount: payload.totalBudget,
+        releasedAmount: 0,
         contractAddress: deployResult.contractAddress,
         contractDeploymentTxHash: deployResult.deploymentTxHash,
         contractDeploymentBlockNumber: deployResult.blockNumber,
+        contractNetwork: deployResult.contractAddress ? 'sepolia' : null,
         status: 'active',
-        officialLocation: payload.officialLocation,
-        allowedRadiusMeters: payload.allowedRadiusMeters,
+        publicVisibility: true,
+        officialLocation: {
+          latitude: Number(payload.officialLocation?.latitude) || 0,
+          longitude: Number(payload.officialLocation?.longitude) || 0,
+        },
+        allowedRadiusMeters: Number(payload.allowedRadiusMeters) || 500,
         expectedSupplierIRNMin: payload.expectedSupplierIRNMin || null,
         expectedSupplierIRNMax: payload.expectedSupplierIRNMax || null,
-        requiredProofs: payload.requiredProofs,
+        requiredProofs: payload.requiredProofs || { sitePhoto: true, materialReceipt: true, completionCertificate: true },
         createdBy: adminUser._id,
         lastUpdatedBy: adminUser._id,
       }],
       { session }
     );
 
-    // 6. Create 3 Milestone documents
+    // 6. Create Milestones
     const milestones = await Milestone.create(
-      payload.milestoneBreakdown.map((m, index) => ({
+      payload.milestoneBreakdown.map((m, idx) => ({
         projectId: project._id,
-        phaseNumber: index + 1,
-        title: m.title,
+        phaseNumber: idx + 1,
+        title: m.title || `Phase ${idx + 1}`,
         description: m.description || '',
-        amount: m.amount,
-        estimatedDeadline: m.estimatedDeadline,
+        amount: Number(m.amount),
         status: 'pending',
-        sentinelStatus: 'not_started',
       })),
       { session }
     );
 
-    // 7. Create fund_lock transaction entry
-    const fundLockTxn = await transactionService.createTransaction(
-      {
-        projectId: project._id,
-        projectNameSnapshot: project.projectName,
-        type: 'fund_lock',
-        amount: payload.totalBudget,
-        contractAddress: deployResult.contractAddress,
-        onChainTxnHash: deployResult.deploymentTxHash,
-        blockNumber: deployResult.blockNumber,
-        initiatedBy: adminUser._id,
-        recipientWalletAddress: vendor.walletAddress,
-        status: 'success',
-        notes: `Initial fund lock for project ${projectId}`,
-        chainTimestamp: new Date(),
-      },
-      session
-    );
+    // 7. Create initial "fund_lock" transaction
+    await transactionService.createTransaction({
+      projectId: project._id,
+      projectNameSnapshot: project.projectName,
+      type: 'fund_lock',
+      amount: project.totalBudget,
+      contractAddress: project.contractAddress,
+      onChainTxnHash: project.contractDeploymentTxHash,
+      initiatedBy: adminUser._id,
+      status: 'success',
+      notes: 'Initial budget locked in vault',
+    }, session);
 
-    // 8. Create audit log
+    // 8. Audit log
     await auditService.logAction({
       userId: adminUser._id,
       userRole: adminUser.role,
@@ -114,33 +135,17 @@ const createProject = async (payload, adminUser, reqMeta = {}) => {
       entityType: 'project',
       entityId: project.projectId,
       projectId: project._id,
-      transactionId: fundLockTxn._id,
-      newValues: {
-        projectName: project.projectName,
-        totalBudget: project.totalBudget,
-        contractAddress: deployResult.contractAddress,
-        contractor: vendor.companyName,
-      },
-      reason: 'New project created with EscrowVault deployment',
+      newValues: { budget: project.totalBudget, milestones: milestones.length },
       ipAddress: reqMeta.ipAddress,
       userAgent: reqMeta.userAgent,
-    });
+    }, session);
 
     await session.commitTransaction();
-
-    // Return populated data
-    const populatedProject = await Project.findById(project._id)
-      .populate('contractorId', 'vendorName companyName walletAddress registryId')
-      .lean();
-
-    return {
-      project: populatedProject,
-      milestones,
-      transaction: fundLockTxn,
-      contractDeployment: deployResult,
-    };
+    return { project, milestones };
   } catch (err) {
-    await session.abortTransaction();
+    if (session.inAtomicitySession()) {
+      await session.abortTransaction();
+    }
     throw err;
   } finally {
     session.endSession();

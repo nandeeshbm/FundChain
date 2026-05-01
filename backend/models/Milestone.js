@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 const MilestoneSchema = new mongoose.Schema({
   projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
-  phaseNumber: { type: Number, required: true, enum: [1, 2, 3] },
+  phaseNumber: { type: Number, required: true },
   title: { type: String, required: true, trim: true },
   description: { type: String, trim: true },
   amount: { type: Number, required: true, min: 0 },
-  estimatedDeadline: { type: Date, required: true },
+  estimatedDeadline: { type: Date, default: null },
   actualSubmissionDate: { type: Date, default: null },
   actualVerificationDate: { type: Date, default: null },
   actualReleaseDate: { type: Date, default: null },

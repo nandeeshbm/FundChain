@@ -1,0 +1,7 @@
+{
+  "delay": 2000,
+  "watch": ["*.js", "controllers", "models", "routes", "services", "config", "middleware", "utils"],
+  "ignore": ["node_modules", "*.test.js", "seed.js"],
+  "ext": "js,json",
+  "signal": "SIGTERM"
+}

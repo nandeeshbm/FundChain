@@ -7,9 +7,80 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": false, "internalType": "string", "name": "projectId", "type": "string" },
-      { "indexed": false, "internalType": "uint256", "name": "budget", "type": "uint256" },
-      { "indexed": false, "internalType": "address", "name": "contractor", "type": "address" }
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "projectId",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "milestoneIndex",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "contractor",
+        "type": "address"
+      }
+    ],
+    "name": "FundsReleased",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "projectId",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "budget",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "contractor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "milestoneCount",
+        "type": "uint256"
+      }
     ],
     "name": "ProjectCreated",
     "type": "event"
@@ -17,17 +88,39 @@
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": false, "internalType": "string", "name": "projectId", "type": "string" },
-      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
-      { "indexed": false, "internalType": "address", "name": "contractor", "type": "address" }
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "projectId",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "frozen",
+        "type": "bool"
+      }
     ],
-    "name": "FundsReleased",
+    "name": "ProjectFrozen",
     "type": "event"
   },
   {
     "inputs": [
-      { "internalType": "string", "name": "_projectId", "type": "string" },
-      { "internalType": "address", "name": "_contractor", "type": "address" }
+      {
+        "internalType": "string",
+        "name": "_projectId",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "_contractor",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_milestoneAmounts",
+        "type": "uint256[]"
+      }
     ],
     "name": "createProject",
     "outputs": [],
@@ -36,35 +129,71 @@
   },
   {
     "inputs": [
-      { "internalType": "string", "name": "_projectId", "type": "string" },
-      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
+      {
+        "internalType": "string",
+        "name": "_projectId",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "_frozen",
+        "type": "bool"
+      }
     ],
-    "name": "releaseFunds",
+    "name": "freezeProject",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "string", "name": "_projectId", "type": "string" }
+      {
+        "internalType": "string",
+        "name": "_projectId",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_index",
+        "type": "uint256"
+      }
     ],
-    "name": "getProjectBalance",
+    "name": "getMilestone",
     "outputs": [
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "isReleased",
+        "type": "bool"
+      },
+      {
+        "internalType": "string",
+        "name": "proofHash",
+        "type": "string"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "string", "name": "", "type": "string" }
+      {
+        "internalType": "string",
+        "name": "_projectId",
+        "type": "string"
+      }
     ],
-    "name": "projects",
+    "name": "getProjectBalance",
     "outputs": [
-      { "internalType": "uint256", "name": "totalBudget", "type": "uint256" },
-      { "internalType": "uint256", "name": "releasedAmount", "type": "uint256" },
-      { "internalType": "address", "name": "contractor", "type": "address" },
-      { "internalType": "bool", "name": "exists", "type": "bool" }
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -73,9 +202,100 @@
     "inputs": [],
     "name": "owner",
     "outputs": [
-      { "internalType": "address", "name": "", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "name": "projects",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalBudget",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "releasedAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "contractor",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "exists",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "isFrozen",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "milestoneCount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "_projectId",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_milestoneIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_proofHash",
+        "type": "string"
+      }
+    ],
+    "name": "releaseFunds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

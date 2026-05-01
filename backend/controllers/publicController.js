@@ -7,7 +7,7 @@ const apiResponse = require('../utils/apiResponse');
 const getPublicProjects = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search, department } = req.query;
-    const query = { publicVisibility: true };
+    const query = {}; // No publicVisibility filter — all projects are transparent by design
     if (department) query.department = department;
     if (search) {
       query.$or = [
@@ -19,7 +19,7 @@ const getPublicProjects = async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [projects, total] = await Promise.all([
       Project.find(query)
-        .select('projectName department projectId totalBudget releasedAmount remainingAmount status projectCreationDateTime contractorId')
+        .select('projectName department projectId totalBudget releasedAmount remainingAmount status projectCreationDateTime contractorId officialLocation allowedRadiusMeters')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
@@ -53,7 +53,7 @@ const getPublicProjects = async (req, res, next) => {
 // GET /api/public/projects/:projectId
 const getPublicProjectDetail = async (req, res, next) => {
   try {
-    const project = await Project.findOne({ projectId: req.params.projectId, publicVisibility: true })
+    const project = await Project.findOne({ projectId: req.params.projectId })
       .select('-createdBy -lastUpdatedBy -expectedSupplierIRNMin -expectedSupplierIRNMax')
       .populate('contractorId', 'companyName vendorName')
       .lean();
@@ -88,4 +88,30 @@ const getPublicTransactions = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getPublicProjects, getPublicProjectDetail, getPublicTransactions };
+// GET /api/public/milestones/:milestoneId/proof
+const getPublicMilestoneProof = async (req, res, next) => {
+  try {
+    const milestone = await Milestone.findById(req.params.milestoneId).lean();
+    if (!milestone) return apiResponse.error(res, 'Milestone not found', [], 404);
+
+    if (!milestone.proofSubmissionId) {
+      return apiResponse.success(res, 'No proof submitted yet', { proof: null });
+    }
+
+    const ProofSubmission = require('../models/ProofSubmission');
+    const proof = await ProofSubmission.findById(milestone.proofSubmissionId)
+      .select('ipfsPhotoUrl ipfsPhotoCid gpsLatitude gpsLongitude submittedAt distanceFromOfficialPinMeters uploadedProofs')
+      .lean();
+
+    return apiResponse.success(res, 'Proof details retrieved', { proof });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { 
+  getPublicProjects, 
+  getPublicProjectDetail, 
+  getPublicTransactions,
+  getPublicMilestoneProof
+};

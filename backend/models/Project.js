@@ -5,12 +5,11 @@ const ProjectSchema = new mongoose.Schema({
   department: {
     type: String,
     required: true,
-    enum: ['PWD', 'Water Dept', 'Education', 'Others'],
   },
   otherDepartmentName: { type: String, trim: true, default: null },
   projectId: { type: String, required: true, unique: true },
-  contractorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true },
-  contractorWalletAddress: { type: String, required: true },
+  contractorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', default: null },
+  contractorWalletAddress: { type: String, default: null },
   projectCreationDateTime: { type: Date, default: Date.now },
   totalBudget: { type: Number, required: true, min: 0 },
   currency: { type: String, default: 'INR' },
@@ -28,10 +27,10 @@ const ProjectSchema = new mongoose.Schema({
     default: 'active',
   },
   officialLocation: {
-    latitude: { type: Number, required: true, min: -90, max: 90 },
-    longitude: { type: Number, required: true, min: -180, max: 180 },
+    latitude: { type: Number, default: 0 },
+    longitude: { type: Number, default: 0 },
   },
-  allowedRadiusMeters: { type: Number, required: true, min: 1 },
+  allowedRadiusMeters: { type: Number, default: 500 },
   expectedSupplierIRNMin: { type: Number, default: null },
   expectedSupplierIRNMax: { type: Number, default: null },
   requiredProofs: {
@@ -44,7 +43,7 @@ const ProjectSchema = new mongoose.Schema({
   lastUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
-ProjectSchema.index({ projectId: 1 });
+// projectId index auto-created by unique: true
 ProjectSchema.index({ contractorId: 1 });
 ProjectSchema.index({ status: 1 });
 ProjectSchema.index({ contractAddress: 1 });
