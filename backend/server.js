@@ -1,23 +1,27 @@
-const express = require('express');
-const cors = require('cors');
+const app = require('./app');
 const connectDB = require('./config/db');
 const { PORT } = require('./config/env');
+const { startEventListeners } = require('./services/eventListenerService');
 
-const app = express();
+const startServer = async () => {
+  // Connect to MongoDB
+  await connectDB();
 
-// Connect to Database
-connectDB();
+  // Start blockchain event listeners
+  try {
+    await startEventListeners();
+    console.log('Blockchain event listeners initialized');
+  } catch (err) {
+    console.warn('Event listeners failed to start (non-fatal):', err.message);
+  }
 
-// Init Middleware
-app.use(express.json());
-app.use(cors());
+  app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
+    console.log(`API docs: http://localhost:${PORT}/`);
+  });
+};
 
-// Define Routes
-app.get('/', (req, res) => res.send('API Running'));
-
-// Transaction Routes
-app.use('/api/transactions', require('./routes/transactions'));
-// Project Routes
-app.use('/api/projects', require('./routes/projects'));
-
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
+});

@@ -1,0 +1,85 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "internalType": "string", "name": "projectId", "type": "string" },
+      { "indexed": false, "internalType": "uint256", "name": "budget", "type": "uint256" },
+      { "indexed": false, "internalType": "address", "name": "contractor", "type": "address" }
+    ],
+    "name": "ProjectCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "internalType": "string", "name": "projectId", "type": "string" },
+      { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" },
+      { "indexed": false, "internalType": "address", "name": "contractor", "type": "address" }
+    ],
+    "name": "FundsReleased",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "_projectId", "type": "string" },
+      { "internalType": "address", "name": "_contractor", "type": "address" }
+    ],
+    "name": "createProject",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "_projectId", "type": "string" },
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
+    ],
+    "name": "releaseFunds",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "_projectId", "type": "string" }
+    ],
+    "name": "getProjectBalance",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "name": "projects",
+    "outputs": [
+      { "internalType": "uint256", "name": "totalBudget", "type": "uint256" },
+      { "internalType": "uint256", "name": "releasedAmount", "type": "uint256" },
+      { "internalType": "address", "name": "contractor", "type": "address" },
+      { "internalType": "bool", "name": "exists", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]

@@ -21,6 +21,7 @@ const auditorMenuSections = [
   {
     title: "System",
     items: [
+      { label: "Settings", to: "/auditor/settings", icon: "⚙️" },
       { label: "Logout", to: "/login", icon: "🚪" },
     ],
   },
@@ -32,6 +33,7 @@ function getPageTitle(pathname) {
   if (pathname.includes("/audit-report")) return "Audit Report";
   if (pathname.includes("/reviews")) return "Reviews";
   if (pathname.includes("/alerts")) return "Alerts";
+  if (pathname.includes("/settings")) return "Settings";
   return "Auditor";
 }
 

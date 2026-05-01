@@ -31,7 +31,8 @@ function Login() {
     setEmail(map[nextRole] || "");
   };
 
-  const handleLogin = () => {
+  const handleLogin = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (role === "admin") {
       navigate("/admin/dashboard");
       return;
@@ -40,7 +41,7 @@ function Login() {
       navigate("/auditor/dashboard");
       return;
     }
-    navigate("/public/explorer");
+    navigate("/public/home");
   };
 
   return (
@@ -471,6 +472,23 @@ function Login() {
             Tracking System
           </h1>
           <p className="brand-tagline">Transparent · Accountable · Trusted</p>
+
+          <div style={{ textAlign: 'center', marginBottom: '40px', position: 'relative', zIndex: 1 }}>
+            <h2 style={{ color: 'white', fontSize: '1.5rem', marginBottom: '10px' }}>Transparent. Secure. Unfakeable.</h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '20px', maxWidth: '300px', margin: '0 auto 20px' }}>
+              Join the movement towards total financial accountability. 
+              Real-time tracking of public resources, secured by blockchain.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>Are you a citizen?</span>
+              <button 
+                style={{ background: '#f5a623', color: '#0f1f3d', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
+                onClick={() => navigate('/public/home')}
+              >
+                Enter Public Portal →
+              </button>
+            </div>
+          </div>
 
           <div className="stats-grid">
             <div className="stat-card">

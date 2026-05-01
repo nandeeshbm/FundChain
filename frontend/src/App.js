@@ -7,7 +7,6 @@ import ContractorMgmt from "./pages/Admin/ContractorMgmt";
 import Transactions from "./pages/Admin/Transactions";
 import Reports from "./pages/Admin/Reports";
 import AdminAlerts from "./pages/Admin/Alerts";
-import Users from "./pages/Admin/Users";
 import Settings from "./pages/Admin/Settings";
 import ClaimSubmission from "./pages/Contractor/ClaimSubmission";
 import AuditorDashboard from "./pages/Auditor/Dashboard";
@@ -16,10 +15,17 @@ import ReviewClaim from "./pages/Auditor/ReviewClaim";
 import AuditReport from "./pages/Auditor/AuditReport";
 import AuditorReviews from "./pages/Auditor/Reviews";
 import AuditorAlerts from "./pages/Auditor/Alerts";
-import Explorer from "./pages/Public/Explorer";
-import AdminLayout from "./components/AdminLayout";
-
+import AuditorSettings from "./pages/Auditor/Settings";
 import AuditorLayout from "./components/AuditorLayout";
+import AdminLayout from "./components/AdminLayout";
+import PublicLayout from "./components/PublicLayout";
+import PublicHome from "./pages/Public/Home";
+import Explorer from "./pages/Public/Explorer";
+import PublicSearch from "./pages/Public/Search";
+import ProjectDetails from "./pages/Public/ProjectDetails";
+import ReportIssue from "./pages/Public/ReportIssue";
+import LiveMap from "./pages/Public/LiveMap";
+import PublicSettings from "./pages/Public/Settings";
 
 function App() {
   return (
@@ -36,7 +42,6 @@ function App() {
         <Route path="transactions" element={<Transactions />} />
         <Route path="reports" element={<Reports />} />
         <Route path="alerts" element={<AdminAlerts />} />
-        <Route path="users" element={<Users />} />
         <Route path="settings" element={<Settings />} />
       </Route>
 
@@ -50,9 +55,19 @@ function App() {
         <Route path="audit-report" element={<AuditReport />} />
         <Route path="reviews" element={<AuditorReviews />} />
         <Route path="alerts" element={<AuditorAlerts />} />
+        <Route path="settings" element={<AuditorSettings />} />
       </Route>
 
-      <Route path="/public/explorer" element={<Explorer />} />
+      <Route path="/public" element={<PublicLayout />}>
+        <Route index element={<Navigate to="home" replace />} />
+        <Route path="home" element={<PublicHome />} />
+        <Route path="explorer" element={<Explorer />} />
+        <Route path="search" element={<PublicSearch />} />
+        <Route path="map" element={<LiveMap />} />
+        <Route path="project-details/:id" element={<ProjectDetails />} />
+        <Route path="report-issue" element={<ReportIssue />} />
+        <Route path="settings" element={<PublicSettings />} />
+      </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

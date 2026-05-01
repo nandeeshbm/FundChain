@@ -21,7 +21,6 @@ const menuSections = [
   {
     title: "Admin",
     items: [
-      { label: "Users", to: "/admin/users", icon: "👥" },
       { label: "Settings", to: "/admin/settings", icon: "⚙️" },
       { label: "Logout", to: "/login", icon: "🚪" },
     ],
@@ -36,7 +35,6 @@ function getPageTitle(pathname) {
   if (pathname.includes("/contractors")) return "Contractors";
   if (pathname.includes("/reports")) return "Reports";
   if (pathname.includes("/alerts")) return "Alerts";
-  if (pathname.includes("/users")) return "Users";
   if (pathname.includes("/settings")) return "Settings";
   return "Admin";
 }

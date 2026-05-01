@@ -18,7 +18,7 @@ contract VendorRegistry is Ownable {
     event VendorRegistered(address wallet, string name, string department);
     event VendorVerified(address wallet);
 
-    constructor() Ownable(msg.sender) {}
+    constructor() {}
 
     function registerVendor(string memory _name, string memory _department) external {
         require(!vendors[msg.sender].exists, "Vendor already registered");

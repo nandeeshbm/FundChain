@@ -17,7 +17,7 @@ contract EscrowVault is Ownable, ReentrancyGuard {
     event ProjectCreated(string projectId, uint256 budget, address contractor);
     event FundsReleased(string projectId, uint256 amount, address contractor);
 
-    constructor() Ownable(msg.sender) {}
+    constructor() {}
 
     function createProject(string memory _projectId, address _contractor) external payable onlyOwner {
         require(!projects[_projectId].exists, "Project already exists");
