@@ -77,7 +77,20 @@ const getFilteredTransactions = async ({
     // Contractors can only view transactions for their assigned projects
     const Project = require('../models/Project');
     const Vendor = require('../models/Vendor');
-    const vendor = await Vendor.findOne({ createdBy: userId });
+    const User = require('../models/User');
+    const user = await User.findById(userId).select('contractorRegistryId walletAddress');
+    let vendor = null;
+
+    if (user?.contractorRegistryId) {
+      vendor = await Vendor.findOne({ registryId: user.contractorRegistryId });
+    }
+    if (!vendor && user?.walletAddress) {
+      vendor = await Vendor.findOne({ walletAddress: user.walletAddress });
+    }
+    if (!vendor) {
+      vendor = await Vendor.findOne({ createdBy: userId });
+    }
+
     if (vendor) {
       const projects = await Project.find({ contractorId: vendor._id }).select('_id');
       query.projectId = { $in: projects.map((p) => p._id) };

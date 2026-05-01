@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import MetaMaskButton from '../../components/MetaMaskButton';
-import { signProofSubmission } from '../../services/metaMask';
+import { connectWallet, ensureSepolia, isMetaMaskAvailable, signProofSubmission } from '../../services/metaMask';
 
 const API = 'http://localhost:5000/api';
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
@@ -76,11 +76,17 @@ export default function ClaimSubmission() {
 
     setSubmitting(true);
     try {
-      // Step 1: Sign with MetaMask if wallet connected (optional but recommended)
+      // Step 1: Trigger MetaMask popup and sign when extension exists
       let signature = '';
-      let signedWallet = walletAddress;
+      let signedWallet = walletAddress || null;
 
-      if (walletAddress) {
+      if (isMetaMaskAvailable()) {
+        if (!signedWallet) {
+          await ensureSepolia();
+          signedWallet = await connectWallet();
+          setWalletAddress(signedWallet);
+        }
+
         setSigning(true);
         try {
           const signed = await signProofSubmission({
@@ -90,6 +96,7 @@ export default function ClaimSubmission() {
             gpsLongitude: parseFloat(form.gpsLongitude),
           });
           signature = signed.signature;
+          signedWallet = signed.walletAddress || signedWallet;
           setForm(f => ({ ...f, metaMaskSignature: signature }));
         } catch (signErr) {
           const proceed = window.confirm('MetaMask signing failed or was rejected. Submit without blockchain signature?');
@@ -103,7 +110,10 @@ export default function ClaimSubmission() {
         gpsLongitude: parseFloat(form.gpsLongitude),
         ipfsPhotoUrl: form.ipfsPhotoUrl || null,
         ipfsPhotoCid: form.ipfsPhotoCid || null,
+        taxIRN: form.taxIRN || null,
         uploadedProofs: form.uploadedProofs,
+        receiptDocumentUrl: form.receiptDocumentUrl || null,
+        completionCertificateUrl: form.completionCertificateUrl || null,
         forensicMeta: {
           imageHash: form.forensicMeta.imageHash || '',
           exifCapturedAt: form.forensicMeta.exifCapturedAt || new Date().toISOString(),
