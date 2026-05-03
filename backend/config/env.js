@@ -14,6 +14,16 @@ module.exports = {
   VENDOR_REGISTRY_ADDRESS: process.env.VENDOR_REGISTRY_ADDRESS,
   ESCROW_VAULT_MASTER_ADDRESS: process.env.ESCROW_VAULT_MASTER_ADDRESS,
 
+  // IRN verification API (Govt/Provider integration)
+  IRN_API_ENABLED: String(process.env.IRN_API_ENABLED || 'false').toLowerCase() === 'true',
+  IRN_API_BASE_URL: process.env.IRN_API_BASE_URL || '',
+  IRN_VERIFY_PATH: process.env.IRN_VERIFY_PATH || '/verify-irn',
+  IRN_API_KEY: process.env.IRN_API_KEY || '',
+  IRN_API_AUTH_HEADER: process.env.IRN_API_AUTH_HEADER || 'x-api-key',
+
+  // IPFS upload (Pinata JWT)
+  PINATA_JWT: process.env.PINATA_JWT || '',
+
   // Event listener
   LAST_PROCESSED_BLOCK_KEY: 'lastProcessedBlock',
 };

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useSearchParams } from 'react-router-dom';
 
 const issueOptions = [
   'No construction happening at site',
@@ -9,7 +11,17 @@ const issueOptions = [
   'Other (Please describe below)'
 ];
 
+const API = 'http://localhost:5000/api';
+
 const ReportIssue = () => {
+  const [searchParams] = useSearchParams();
+  const [projects, setProjects] = useState([]);
+  const [projectLoading, setProjectLoading] = useState(true);
+  const [projectError, setProjectError] = useState(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitSuccess, setSubmitSuccess] = useState(null);
+  const [receipt, setReceipt] = useState(null);
   const [formData, setFormData] = useState({
     projectId: '',
     selectedProject: '',
@@ -21,9 +33,146 @@ const ReportIssue = () => {
     anonymous: true,
   });
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setProjectLoading(true);
+      setProjectError(null);
+      try {
+        const res = await axios.get(`${API}/public/projects?limit=200`);
+        if (res.data.success) {
+          setProjects(res.data.data);
+        } else {
+          setProjectError('Unable to load projects right now.');
+        }
+      } catch (err) {
+        console.error(err);
+        setProjectError('Unable to load projects right now.');
+      } finally {
+        setProjectLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
+    const preset = searchParams.get('projectId');
+    if (preset) {
+      setFormData((prev) => ({
+        ...prev,
+        projectId: preset,
+        selectedProject: preset,
+      }));
+    }
+  }, [searchParams]);
+
+  const handleSelectChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      selectedProject: value,
+      projectId: value,
+    }));
+  };
+
+  const handleProjectIdChange = (e) => {
+    const value = e.target.value;
+    const match = projects.find((p) => p.projectId === value);
+    setFormData((prev) => ({
+      ...prev,
+      projectId: value,
+      selectedProject: match ? match.projectId : '',
+    }));
+  };
+
+  const downloadReceipt = (report) => {
+    if (!report) return;
+    const lines = [
+      `Report ID: ${report.reportId}`,
+      `Project ID: ${report.projectId}`,
+      `Project Name: ${report.projectName}`,
+      `Submitted At: ${new Date(report.createdAt).toLocaleString('en-IN')}`,
+      '',
+      `Observation: ${formData.observation}`,
+      `Description: ${formData.description}`,
+      `Anonymous: ${report.anonymous ? 'Yes' : 'No'}`,
+      report.anonymous ? 'Reporter details were protected.' : `Reporter: ${report.reporterName || 'N/A'} / ${report.reporterEmail || 'N/A'} / ${report.reporterPhone || 'N/A'}`,
+    ].join('\n');
+
+    const blob = new Blob([lines], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `issue_report_${report.projectId || 'unknown'}_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Issue report submitted successfully (dummy mode).');
+    setSubmitError(null);
+    setSubmitSuccess(null);
+    setReceipt(null);
+
+    const projectSelection = formData.selectedProject || formData.projectId;
+    if (!projectSelection) {
+      setSubmitError('Please select or enter the Project ID for the issue report.');
+      return;
+    }
+    if (!formData.observation) {
+      setSubmitError('Please choose the observation that best describes the issue.');
+      return;
+    }
+    if (!formData.description.trim()) {
+      setSubmitError('Please describe the issue in detail.');
+      return;
+    }
+
+    setSubmitLoading(true);
+    try {
+      const res = await axios.post(`${API}/public/report-issues`, {
+        projectId: projectSelection,
+        observation: formData.observation,
+        description: formData.description,
+        anonymous: formData.anonymous,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+      });
+
+      if (res.data.success) {
+        setSubmitSuccess('Issue report submitted successfully.');
+        setReceipt({
+          reportId: res.data.data.reportId,
+          projectId: res.data.data.projectId,
+          projectName: res.data.data.projectName,
+          createdAt: res.data.data.createdAt,
+          anonymous: formData.anonymous,
+          observation: formData.observation,
+          description: formData.description,
+          reporterName: formData.name || null,
+          reporterEmail: formData.email || null,
+          reporterPhone: formData.phone || null,
+        });
+        setFormData({
+          projectId: '',
+          selectedProject: '',
+          observation: 'Other (Please describe below)',
+          description: '',
+          name: '',
+          email: '',
+          phone: '',
+          anonymous: true,
+        });
+      } else {
+        setSubmitError('Unable to submit the issue report. Please try again later.');
+      }
+    } catch (err) {
+      console.error(err);
+      setSubmitError('Unable to submit the issue report. Please try again later.');
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   return (
@@ -43,21 +192,29 @@ const ReportIssue = () => {
             <select
               style={styles.input}
               value={formData.selectedProject}
-              onChange={(e) => setFormData({ ...formData, selectedProject: e.target.value })}
+              onChange={handleSelectChange}
+              disabled={projectLoading}
             >
-              <option value=''>Select Project</option>
-              <option value='PJT101'>PJT101 - Primary School, Kurla</option>
-              <option value='PJT102'>PJT102 - High School, Andheri</option>
-              <option value='PJT103'>PJT103 - Community Health Center</option>
+              <option value=''>
+                {projectLoading ? 'Loading projects...' : 'Select Project'}
+              </option>
+              {projects.map((proj) => (
+                <option key={proj.projectId} value={proj.projectId}>
+                  {proj.projectId} - {proj.projectName}
+                </option>
+              ))}
             </select>
             <span style={styles.orText}>or</span>
             <input
               style={styles.input}
               placeholder='Enter Project ID'
               value={formData.projectId}
-              onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+              onChange={handleProjectIdChange}
             />
           </div>
+          {projectError && (
+            <div style={styles.helperText}>{projectError}</div>
+          )}
         </div>
 
         <div style={styles.section}>
@@ -118,9 +275,25 @@ const ReportIssue = () => {
           </button>
         </div>
 
+        {submitError && <div style={styles.alertError}>{submitError}</div>}
+        {submitSuccess && (
+          <div style={styles.alertSuccess}>
+            {submitSuccess}
+            {receipt && (
+              <button type='button' style={styles.downloadBtn} onClick={() => downloadReceipt(receipt)}>
+                Download Report Receipt
+              </button>
+            )}
+          </div>
+        )}
+
         <div style={styles.footerRow}>
-          <button type='button' style={styles.secondaryBtn} onClick={() => alert('Draft saved (dummy).')}>Save Draft</button>
-          <button type='submit' style={styles.primaryBtn}>Submit Report</button>
+          <button type='button' style={styles.secondaryBtn} onClick={() => setSubmitError(null)} disabled={submitLoading}>
+            Clear
+          </button>
+          <button type='submit' style={styles.primaryBtn} disabled={submitLoading}>
+            {submitLoading ? 'Submitting...' : 'Submit Report'}
+          </button>
         </div>
       </form>
     </div>
@@ -139,6 +312,7 @@ const styles = {
   inlineRow: { display: 'flex', gap: '10px', alignItems: 'center' },
   orText: { color: '#94a3b8', fontSize: '0.85rem' },
   input: { flex: 1, border: '1px solid #dbe2ea', borderRadius: '10px', background: '#f8fafc', padding: '10px 12px', outline: 'none' },
+  helperText: { marginTop: '8px', fontSize: '0.82rem', color: '#ef4444' },
   optionGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
   optionCard: { textAlign: 'left', border: '1px solid #e2e8f0', borderRadius: '10px', background: '#f8fafc', padding: '10px', color: '#334155', display: 'flex', gap: '8px', cursor: 'pointer' },
   optionCardActive: { border: '1px solid #93c5fd', background: '#eff6ff', color: '#1e3a8a' },
@@ -148,6 +322,9 @@ const styles = {
   detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' },
   toggleRow: { width: '100%', border: '1px solid #dbe2ea', borderRadius: '10px', background: '#f8fafc', padding: '10px 12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' },
   toggleIcon: { fontSize: '1.1rem' },
+  alertError: { padding: '14px 18px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: 12, color: '#b91c1c', marginBottom: 16 },
+  alertSuccess: { padding: '14px 18px', background: '#d1fae5', border: '1px solid #6ee7b7', borderRadius: 12, color: '#065f46', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  downloadBtn: { border: '1px solid #10b981', background: '#10b981', color: '#fff', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontWeight: 700 },
   footerRow: { display: 'flex', justifyContent: 'flex-end', gap: '10px' },
   secondaryBtn: { border: '1px solid #cbd5e1', background: '#fff', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer' },
   primaryBtn: { border: 'none', background: '#2563eb', color: '#fff', borderRadius: '10px', padding: '10px 14px', cursor: 'pointer', fontWeight: 700 },

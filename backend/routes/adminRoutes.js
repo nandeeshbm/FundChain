@@ -15,9 +15,10 @@ const {
   getMilestoneProof,
   releaseFunds,
 } = require('../controllers/fundReleaseController');
+const { getIssueReports } = require('../controllers/reportController');
 
 // Admin-write routes require admin role
-router.use(['/dashboard-stats', '/projects', '/vendors', '/milestones'], authenticateUser);
+router.use(['/dashboard-stats', '/projects', '/vendors', '/milestones', '/report-issues'], authenticateUser);
 
 // Dashboard (admin only)
 router.get('/dashboard-stats', authorizeRoles('admin'), getDashboardStats);
@@ -28,10 +29,10 @@ router.get('/projects', authorizeRoles('admin', 'auditor', 'contractor'), getAll
 router.get('/projects/:projectId', authorizeRoles('admin', 'auditor', 'contractor'), getProjectById);
 
 // Fund Release (admin + auditor can view, only admin can release)
-router.get('/projects/:projectId/fund-summary', authenticateUser, authorizeRoles('admin', 'auditor'), getFundSummary);
-router.get('/projects/:projectId/milestones', authenticateUser, authorizeRoles('admin', 'auditor', 'contractor'), getProjectMilestones);
-router.get('/milestones/:milestoneId/proof', authenticateUser, authorizeRoles('admin', 'auditor'), getMilestoneProof);
-router.post('/milestones/:milestoneId/release', authenticateUser, authorizeRoles('admin'), releaseFunds);
+router.get('/projects/:projectId/fund-summary', authorizeRoles('admin', 'auditor'), getFundSummary);
+router.get('/projects/:projectId/milestones', authorizeRoles('admin', 'auditor', 'contractor'), getProjectMilestones);
+router.get('/milestones/:milestoneId/proof', authorizeRoles('admin', 'auditor'), getMilestoneProof);
+router.post('/milestones/:milestoneId/release', authorizeRoles('admin'), releaseFunds);
 
 // Vendor routes (admin only write, auditor can read)
 const {
@@ -39,8 +40,11 @@ const {
   getAllVendors,
   updateVendor,
 } = require('../controllers/vendorController');
-router.post('/vendors', authenticateUser, authorizeRoles('admin'), validate(require('../middleware/validateRequest').createVendorSchema), createVendor);
-router.get('/vendors', authenticateUser, authorizeRoles('admin', 'auditor', 'contractor'), getAllVendors);
-router.patch('/vendors/:registryId', authenticateUser, authorizeRoles('admin'), validate(require('../middleware/validateRequest').updateVendorSchema), updateVendor);
+router.post('/vendors', authorizeRoles('admin'), validate(require('../middleware/validateRequest').createVendorSchema), createVendor);
+router.get('/vendors', authorizeRoles('admin', 'auditor', 'contractor'), getAllVendors);
+router.patch('/vendors/:registryId', authorizeRoles('admin'), validate(require('../middleware/validateRequest').updateVendorSchema), updateVendor);
+
+// Issue report review for authorized staff
+router.get('/report-issues', authorizeRoles('admin', 'auditor'), getIssueReports);
 
 module.exports = router;

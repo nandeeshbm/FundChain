@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import MetaMaskButton from '../../components/MetaMaskButton';
 import { connectWallet, ensureSepolia, isMetaMaskAvailable, signProofSubmission } from '../../services/metaMask';
@@ -17,6 +17,11 @@ export default function ClaimSubmission() {
   const [signing, setSigning] = useState(false);
   const [result, setResult] = useState(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [capturedSitePhotoDataUrl, setCapturedSitePhotoDataUrl] = useState('');
+  const [cameraError, setCameraError] = useState('');
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const [form, setForm] = useState({
     gpsLatitude: '',
     gpsLongitude: '',
@@ -35,6 +40,66 @@ export default function ClaimSubmission() {
       .then(r => { if (r.data.success) setProjects(r.data.data || []); })
       .catch(console.error);
   }, []);
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  };
+
+  useEffect(() => () => stopCamera(), []);
+
+  const openCamera = async () => {
+    try {
+      setCameraError('');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+      setTimeout(() => {
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      }, 0);
+    } catch (err) {
+      setCameraError(`Camera access denied: ${err.message}`);
+    }
+  };
+
+  const digestHex = async (text) => {
+    const data = new TextEncoder().encode(text);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const captureFromCamera = async () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const hash = await digestHex(`${Date.now()}-${dataUrl.slice(0, 300)}`);
+
+    setCapturedSitePhotoDataUrl(dataUrl);
+    setForm((f) => ({
+      ...f,
+      uploadedProofs: { ...f.uploadedProofs, sitePhoto: true },
+      ipfsPhotoUrl: 'ipfs://pending',
+      ipfsPhotoCid: `pending-${hash.slice(0, 20)}`,
+      forensicMeta: {
+        ...f.forensicMeta,
+        imageHash: `sha256:${hash}`,
+        exifCapturedAt: new Date().toISOString().slice(0, 16),
+        deviceInfo: f.forensicMeta.deviceInfo || navigator.userAgent.slice(0, 60),
+      },
+    }));
+    stopCamera();
+    setCameraOpen(false);
+  };
 
   const loadMilestones = async (projectId) => {
     setSelectedProject(projectId);
@@ -70,6 +135,8 @@ export default function ClaimSubmission() {
   const handleSignAndSubmit = async () => {
     if (!selectedProject || !selectedMilestone) return alert('Select a project and milestone first');
     if (!form.gpsLatitude || !form.gpsLongitude) return alert('GPS coordinates are required');
+    if (!form.taxIRN || form.taxIRN.length !== 64) return alert('Valid 64-character IRN is required');
+    if (!capturedSitePhotoDataUrl) return alert('Live site photo from camera is required');
 
     const hasAnyProof = form.uploadedProofs.sitePhoto || form.uploadedProofs.materialReceipt || form.uploadedProofs.completionCertificate;
     if (!hasAnyProof) return alert('Upload at least one proof document (site photo, receipt, or certificate)');
@@ -110,6 +177,7 @@ export default function ClaimSubmission() {
         gpsLongitude: parseFloat(form.gpsLongitude),
         ipfsPhotoUrl: form.ipfsPhotoUrl || null,
         ipfsPhotoCid: form.ipfsPhotoCid || null,
+        capturedSitePhotoDataUrl,
         taxIRN: form.taxIRN || null,
         uploadedProofs: form.uploadedProofs,
         receiptDocumentUrl: form.receiptDocumentUrl || null,
@@ -270,10 +338,10 @@ export default function ClaimSubmission() {
         {/* Proof Upload */}
         <div style={{ background: 'white', borderRadius: 14, padding: 24, border: '1px solid #e2e8f0' }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>📸 Proof Documents</h3>
-          <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>Click each card to open camera (Site Photo) or file picker (Receipt & Certificate)</p>
+          <p style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>Site Photo is camera-only (live capture). File upload from device is blocked for site photo.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
             {[
-              { key: 'sitePhoto', label: 'Site Photo', emoji: '🏗️', accept: 'image/*', capture: 'environment', desc: 'Take camera photo of work' },
+              { key: 'sitePhoto', label: 'Site Photo (Live)', emoji: '📷', accept: null, capture: null, desc: 'Capture from camera only' },
               { key: 'materialReceipt', label: 'Material Receipt', emoji: '🧾', accept: 'image/*,application/pdf', capture: null, desc: 'Upload purchase bill/receipt' },
               { key: 'completionCertificate', label: 'Completion Cert', emoji: '📜', accept: 'image/*,application/pdf', capture: null, desc: 'Engineer sign-off document' },
             ].map(p => {
@@ -284,40 +352,63 @@ export default function ClaimSubmission() {
                   border: `2px solid ${uploaded ? '#10b981' : '#e2e8f0'}`, borderRadius: 12, cursor: 'pointer', gap: 6,
                   transition: 'all 0.2s', background: uploaded ? 'rgba(16,185,129,0.05)' : 'white',
                 }}>
-                  <input type="file" style={{ display: 'none' }} accept={p.accept}
-                    {...(p.capture ? { capture: p.capture } : {})}
-                    onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setForm(f => ({
-                          ...f,
-                          uploadedProofs: { ...f.uploadedProofs, [p.key]: true },
-                          ...(p.key === 'sitePhoto' ? {
-                            ipfsPhotoUrl: `local://${file.name}`,
-                            forensicMeta: { ...f.forensicMeta, imageHash: `sha256:${file.size}-${file.name}`, deviceInfo: f.forensicMeta.deviceInfo || navigator.userAgent.slice(0, 30) }
-                          } : {})
-                        }));
-                      }
-                    }}
-                  />
+                  {p.key !== 'sitePhoto' && (
+                    <input type="file" style={{ display: 'none' }} accept={p.accept}
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setForm(f => ({
+                            ...f,
+                            uploadedProofs: { ...f.uploadedProofs, [p.key]: true },
+                          }));
+                        }
+                      }}
+                    />
+                  )}
+                  {p.key === 'sitePhoto' && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); openCamera(); }}
+                      style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid #2563eb', background: '#eff6ff', color: '#1d4ed8', fontWeight: 700, cursor: 'pointer', fontSize: 11 }}
+                    >
+                      Open Camera
+                    </button>
+                  )}
                   <span style={{ fontSize: 30 }}>{uploaded ? '✅' : p.emoji}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: uploaded ? '#10b981' : '#1e293b', textAlign: 'center' }}>{p.label}</span>
                   <span style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center' }}>{uploaded ? '✓ Uploaded' : p.desc}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, color: '#2563eb', marginTop: 2 }}>
-                    {p.capture ? '📷 Open Camera' : '📁 Choose File'}
+                    {p.key === 'sitePhoto' ? '📷 Camera Only' : '📁 Choose File'}
                   </span>
                 </label>
               );
             })}
           </div>
+          {cameraError && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>{cameraError}</div>}
+          {cameraOpen && (
+            <div style={{ border: '1px solid #cbd5e1', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+              <div style={{ fontSize: 12, marginBottom: 8, color: '#334155', fontWeight: 700 }}>Live Camera Capture</div>
+              <video ref={videoRef} autoPlay playsInline style={{ width: '100%', maxHeight: 280, borderRadius: 8, background: '#000' }} />
+              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <button type="button" onClick={captureFromCamera} style={{ padding: '8px 12px', border: 'none', borderRadius: 8, background: '#16a34a', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Capture</button>
+                <button type="button" onClick={() => { stopCamera(); setCameraOpen(false); }} style={{ padding: '8px 12px', border: 'none', borderRadius: 8, background: '#64748b', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Close</button>
+              </div>
+            </div>
+          )}
+          {capturedSitePhotoDataUrl && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: '#475569', marginBottom: 6 }}>Captured Site Photo Preview</div>
+              <img src={capturedSitePhotoDataUrl} alt="Captured site" style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={lbl}>IPFS Photo URL (auto-filled)</label>
-              <input style={inp} placeholder="ipfs://..." value={form.ipfsPhotoUrl} onChange={e => setForm(f => ({ ...f, ipfsPhotoUrl: e.target.value }))} />
+              <label style={lbl}>IPFS Photo URL (auto)</label>
+              <input style={inp} placeholder="ipfs://..." value={form.ipfsPhotoUrl} readOnly />
             </div>
             <div>
-              <label style={lbl}>IPFS CID</label>
-              <input style={inp} placeholder="Qm..." value={form.ipfsPhotoCid} onChange={e => setForm(f => ({ ...f, ipfsPhotoCid: e.target.value }))} />
+              <label style={lbl}>IPFS CID (auto)</label>
+              <input style={inp} placeholder="Qm..." value={form.ipfsPhotoCid} readOnly />
             </div>
           </div>
         </div>

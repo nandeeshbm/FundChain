@@ -7,7 +7,7 @@ const apiResponse = require('../utils/apiResponse');
 const getPublicProjects = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, search, department } = req.query;
-    const query = {}; // No publicVisibility filter — all projects are transparent by design
+    const query = { publicVisibility: true, status: { $nin: ['draft', 'cancelled'] } };
     if (department) query.department = department;
     if (search) {
       query.$or = [

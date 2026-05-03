@@ -1,4 +1,5 @@
 const { calculateDistanceMeters } = require('./geoService');
+const { verifyGovernmentIRN } = require('./irnVerificationService');
 
 /**
  * Sentinel / Anomaly Detector Service.
@@ -28,17 +29,16 @@ const analyzeSubmission = async ({
   }
 
   // 2. Tax API Handshake (IRN Validation)
-  // Rule: Checks the submitted 64-character IRN against the Govt Database
+  // Rule: Checks the submitted 64-character IRN against Govt/provider API
   const irn = proofSubmission.taxIRN;
   if (!irn) {
     reasons.push('❌ FLAGGED: Missing Tax IRN Receipt');
   } else if (irn.length !== 64) {
     reasons.push('❌ FLAGGED: Invalid IRN format — must be 64 characters');
   } else {
-    // Mock Govt API check
-    const isIrnValid = irn.startsWith('IRN') || irn.includes('GOV'); 
-    if (!isIrnValid) {
-      reasons.push('❌ FLAGGED: IRN validation failed against Govt Database');
+    const irnResult = await verifyGovernmentIRN(irn);
+    if (!irnResult.isValid) {
+      reasons.push(`❌ FLAGGED: IRN validation failed - ${irnResult.reason || 'Invalid IRN'}`);
     }
   }
 

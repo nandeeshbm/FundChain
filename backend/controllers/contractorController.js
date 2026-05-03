@@ -4,6 +4,7 @@ const Project = require('../models/Project');
 const Vendor = require('../models/Vendor');
 const { analyzeSubmission } = require('../services/anomalyDetector');
 const { calculateDistanceMeters } = require('../services/geoService');
+const { uploadPhotoDataUrlToIPFS } = require('../services/ipfsService');
 const auditService = require('../services/auditService');
 const apiResponse = require('../utils/apiResponse');
 
@@ -20,6 +21,22 @@ const submitProof = async (req, res, next) => {
     const vendor = await Vendor.findById(project.contractorId);
     if (!vendor) return apiResponse.error(res, 'Contractor not found', [], 404);
 
+    // Site photo must come from live camera capture payload
+    if (project.requiredProofs?.sitePhoto && !req.body.capturedSitePhotoDataUrl) {
+      return apiResponse.error(res, 'Live camera site photo is required', [], 400);
+    }
+
+    let ipfsPhotoUrl = req.body.ipfsPhotoUrl || null;
+    let ipfsPhotoCid = req.body.ipfsPhotoCid || null;
+    if (req.body.capturedSitePhotoDataUrl) {
+      const ipfsResult = await uploadPhotoDataUrlToIPFS(req.body.capturedSitePhotoDataUrl, `site-photo-${Date.now()}.jpg`);
+      if (!ipfsResult.ok) {
+        return apiResponse.error(res, 'Failed to process captured site photo', [ipfsResult.reason || 'Unknown image error'], 400);
+      }
+      ipfsPhotoUrl = ipfsResult.url;
+      ipfsPhotoCid = ipfsResult.cid;
+    }
+
     // Build proof submission
     const distance = calculateDistanceMeters(
       project.officialLocation.latitude,
@@ -32,8 +49,8 @@ const submitProof = async (req, res, next) => {
       projectId: project._id,
       milestoneId: milestone._id,
       contractorId: vendor._id,
-      ipfsPhotoUrl: req.body.ipfsPhotoUrl || null,
-      ipfsPhotoCid: req.body.ipfsPhotoCid || null,
+      ipfsPhotoUrl,
+      ipfsPhotoCid,
       gpsLatitude: req.body.gpsLatitude,
       gpsLongitude: req.body.gpsLongitude,
       taxIRN: req.body.taxIRN || null,

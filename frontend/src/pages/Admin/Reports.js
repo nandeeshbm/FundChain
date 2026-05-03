@@ -9,16 +9,18 @@ const ReportsModule = () => {
   const [stats, setStats] = useState({ totalProjects: 0, totalBudget: 0, totalReleased: 0, totalRemaining: 0 });
   const [projects, setProjects] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [issueReports, setIssueReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [byStatus, setByStatus] = useState({ active: 0, in_progress: 0, completed: 0, planning: 0 });
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [dashRes, projRes, txnRes] = await Promise.all([
+        const [dashRes, projRes, txnRes, issueRes] = await Promise.all([
           axios.get(`${API}/admin/dashboard-stats`, authHeader()),
           axios.get(`${API}/admin/projects?limit=50`, authHeader()),
           axios.get(`${API}/transactions?limit=10`, authHeader()),
+          axios.get(`${API}/admin/report-issues?limit=50`, authHeader()),
         ]);
         if (dashRes.data.success) setStats(dashRes.data.data.stats);
         if (projRes.data.success) {
@@ -29,6 +31,7 @@ const ReportsModule = () => {
           setByStatus(statusCount);
         }
         if (txnRes.data.success) setTransactions(txnRes.data.data);
+        if (issueRes.data.success) setIssueReports(issueRes.data.data);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
@@ -44,7 +47,29 @@ const ReportsModule = () => {
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `report_${Date.now()}.csv`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `project_report_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadIssuesCSV = () => {
+    const headers = ['Report ID', 'Project ID', 'Project Name', 'Observation', 'Description', 'Anonymous', 'Reporter Email', 'Status', 'Submitted At'];
+    const rows = issueReports.map(r => [
+      r._id,
+      r.projectId,
+      r.projectName,
+      r.observation,
+      r.description.replace(/\n/g, ' '),
+      r.anonymous ? 'Yes' : 'No',
+      r.reporterEmail || '',
+      r.status,
+      new Date(r.createdAt).toLocaleString('en-IN'),
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `issue_reports_${Date.now()}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -185,6 +210,39 @@ const ReportsModule = () => {
                 <td style={{ padding: '12px 16px', fontSize: 12, color: '#64748b' }}>{t.type}</td>
                 <td style={{ padding: '12px 16px' }}><span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: t.status === 'success' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', color: t.status === 'success' ? '#10b981' : '#ef4444' }}>{t.status}</span></td>
                 <td style={{ padding: '12px 16px', fontSize: 12, color: '#94a3b8' }}>{new Date(t.createdAt).toLocaleDateString('en-IN')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Issue Report Log */}
+      <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', marginTop: 20, overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Recent Issue Reports</span>
+          <button onClick={handleDownloadIssuesCSV} style={{ padding: '8px 16px', background: '#10b981', color: 'white', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+            ⬇ Export Issues
+          </button>
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Report ID', 'Project', 'Observation', 'Anonymous', 'Status', 'Date'].map(h => (
+                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, color: '#94a3b8', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {issueReports.length === 0 ? (
+              <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#94a3b8' }}>No issue reports have been submitted yet.</td></tr>
+            ) : issueReports.map((report) => (
+              <tr key={report._id}>
+                <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: 11, color: '#2563eb', fontWeight: 700 }}>{report._id.slice(-8)}</td>
+                <td style={{ padding: '12px 16px', fontSize: 13 }}>{report.projectName || report.projectId}</td>
+                <td style={{ padding: '12px 16px', fontSize: 12, color: '#475569' }}>{report.observation}</td>
+                <td style={{ padding: '12px 16px', fontSize: 12 }}>{report.anonymous ? 'Yes' : 'No'}</td>
+                <td style={{ padding: '12px 16px' }}><span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: report.status === 'reviewed' ? 'rgba(59,130,246,0.12)' : 'rgba(234,179,8,0.12)', color: report.status === 'reviewed' ? '#2563eb' : '#b45309' }}>{report.status}</span></td>
+                <td style={{ padding: '12px 16px', fontSize: 12, color: '#94a3b8' }}>{new Date(report.createdAt).toLocaleDateString('en-IN')}</td>
               </tr>
             ))}
           </tbody>

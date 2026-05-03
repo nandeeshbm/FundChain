@@ -60,12 +60,23 @@ const createProjectSchema = Joi.object({
   }).optional(),
 });
 
+const createIssueReportSchema = Joi.object({
+  projectId: Joi.string().trim().required(),
+  observation: Joi.string().trim().min(5).required(),
+  description: Joi.string().trim().min(10).required(),
+  anonymous: Joi.boolean().required(),
+  name: Joi.string().trim().allow(null, '').optional(),
+  email: Joi.string().email().allow(null, '').optional(),
+  phone: Joi.string().trim().allow(null, '').optional(),
+});
+
 const submitProofSchema = Joi.object({
   ipfsPhotoUrl: Joi.string().allow(null, '').optional(),
   ipfsPhotoCid: Joi.string().allow(null, '').optional(),
+  capturedSitePhotoDataUrl: Joi.string().pattern(/^data:image\/(png|jpeg|jpg|webp);base64,/).allow(null, '').optional(),
   gpsLatitude: Joi.number().min(-90).max(90).required(),
   gpsLongitude: Joi.number().min(-180).max(180).required(),
-  taxIRN: Joi.string().length(64).allow(null, '').optional(),
+  taxIRN: Joi.string().length(64).required(),
   uploadedProofs: Joi.object({
     sitePhoto: Joi.boolean().optional(),
     materialReceipt: Joi.boolean().optional(),
@@ -120,6 +131,7 @@ module.exports = {
   registerSchema,
   loginSchema,
   createProjectSchema,
+  createIssueReportSchema,
   submitProofSchema,
   releaseFundsSchema,
   resolveTransactionSchema,

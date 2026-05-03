@@ -43,7 +43,15 @@ const ProjectDetails = () => {
     <div style={{ fontFamily: "'Sora', sans-serif", background: '#f8fafc', minHeight: '100vh' }}>
       {/* Hero */}
       <div style={{ background: 'linear-gradient(135deg, #0f1f3d 0%, #1e4db7 100%)', padding: '40px', color: 'white' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', marginBottom: 16, fontSize: 13 }}>← Back</button>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>← Back</button>
+          <button
+            onClick={() => navigate(`/public/report-issue?projectId=${project.projectId}`)}
+            style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.25)', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}
+          >
+            Report Issue
+          </button>
+        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 6 }}>{project.projectId} · {project.department}</div>
