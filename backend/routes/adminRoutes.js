@@ -15,10 +15,12 @@ const {
   getMilestoneProof,
   releaseFunds,
 } = require('../controllers/fundReleaseController');
-const { getIssueReports } = require('../controllers/reportController');
+const { getAuditLogs } = require('../controllers/auditLogController');
+const { listReportArchives, getReportArchiveDetail } = require('../controllers/reportArchiveController');
+const { getIssueReportsForAdmin } = require('../controllers/reportController');
 
 // Admin-write routes require admin role
-router.use(['/dashboard-stats', '/projects', '/vendors', '/milestones', '/report-issues'], authenticateUser);
+router.use(['/dashboard-stats', '/projects', '/vendors', '/milestones', '/report-issues', '/audit-logs', '/report-archives'], authenticateUser);
 
 // Dashboard (admin only)
 router.get('/dashboard-stats', authorizeRoles('admin'), getDashboardStats);
@@ -45,6 +47,13 @@ router.get('/vendors', authorizeRoles('admin', 'auditor', 'contractor'), getAllV
 router.patch('/vendors/:registryId', authorizeRoles('admin'), validate(require('../middleware/validateRequest').updateVendorSchema), updateVendor);
 
 // Issue report review for authorized staff
-router.get('/report-issues', authorizeRoles('admin', 'auditor'), getIssueReports);
+router.get('/report-issues', authorizeRoles('admin'), getIssueReportsForAdmin);
+
+// Audit log feed for admin notifications
+router.get('/audit-logs', authorizeRoles('admin'), getAuditLogs);
+
+// Report archive visibility for admin
+router.get('/report-archives', authorizeRoles('admin'), listReportArchives);
+router.get('/report-archives/:archiveId', authorizeRoles('admin'), getReportArchiveDetail);
 
 module.exports = router;

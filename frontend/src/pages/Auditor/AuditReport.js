@@ -1,8 +1,17 @@
 import React, { useState } from 'react'; 
+import axios from 'axios';
   
+ const API = 'http://localhost:5000/api';
+ const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+
  const AuditReport = () => { 
    // State for report generation logic 
    const [loading, setLoading] = useState(false); 
+  const [error, setError] = useState(null);
+  const [projectId, setProjectId] = useState('');
+  const [reportStatus, setReportStatus] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
    // Mock data representing the "Shared Source of Truth"  
    const projectSummary = [
@@ -12,13 +21,36 @@ import React, { useState } from 'react';
      { name: 'Community Hall', total: 20, approved: 15, flagged: 1, rejected: 4 }
    ]; 
   
-   const handleGenerateReport = () => { 
-     setLoading(true); 
-     setTimeout(() => { 
-       alert("Fetching encrypted audit trails from the Robotic Vault..."); 
-       setLoading(false); 
-     }, 1000); 
-   }; 
+  const handleGenerateReport = async () => { 
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`${API}/reports/forensic`, {
+        ...authHeader(),
+        params: {
+          projectId: projectId || undefined,
+          reportStatus: reportStatus || 'all',
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+        },
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      link.href = url;
+      link.download = `Forensic_Audit_Report_${stamp}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      const message = err?.response?.data?.message || 'Failed to generate report.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }; 
   
    return ( 
      <div style={styles.container}> 
@@ -37,28 +69,29 @@ import React, { useState } from 'react';
          <div style={styles.filterBar}> 
            <div style={styles.filterGroup}> 
              <label style={styles.filterLabel}>Project Scope</label> 
-             <select style={styles.filterInput}> 
-               <option>All Projects</option> 
-               <option>Road Construction</option> 
-               <option>School Building</option> 
-             </select> 
+            <input
+              style={styles.filterInput}
+              placeholder="Enter Project ID (optional)"
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+            />
            </div> 
            <div style={styles.filterGroup}> 
              <label style={styles.filterLabel}>On-Chain Status</label> 
-             <select style={styles.filterInput}> 
-               <option>All Status</option> 
-               <option>Forensically Approved</option> 
-               <option>AI Flagged</option> 
-               <option>Settlement Rejected</option> 
+            <select style={styles.filterInput} value={reportStatus} onChange={(e) => setReportStatus(e.target.value)}> 
+              <option value="all">All Status</option> 
+              <option value="success">Success</option> 
+              <option value="flagged">Flagged</option> 
+              <option value="failed">Failed</option> 
              </select> 
            </div> 
            <div style={styles.filterGroup}> 
              <label style={styles.filterLabel}>Date From</label> 
-             <input type="date" style={styles.filterInput} defaultValue="2024-05-09" /> 
+            <input type="date" style={styles.filterInput} value={startDate} onChange={(e) => setStartDate(e.target.value)} /> 
            </div> 
            <div style={styles.filterGroup}> 
              <label style={styles.filterLabel}>Date To</label> 
-             <input type="date" style={styles.filterInput} defaultValue="2024-05-31" /> 
+            <input type="date" style={styles.filterInput} value={endDate} onChange={(e) => setEndDate(e.target.value)} /> 
            </div> 
            <button  
              style={styles.btnGenerate}  
@@ -67,6 +100,7 @@ import React, { useState } from 'react';
            > 
              {loading? 'Processing...' : 'Generate Forensic Report'} 
            </button> 
+          {error && <div style={styles.errorText}>{error}</div>}
          </div> 
   
          {/* Summary Pulse: Macro-Audit Metrics */} 
@@ -143,7 +177,8 @@ import React, { useState } from 'react';
    filterGroup: { display: 'flex', flexDirection: 'column', gap: '4px' }, 
    filterLabel: { fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }, 
    filterInput: { padding: '8px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', background: 'white' }, 
-   btnGenerate: { padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', alignSelf: 'flex-end' }, 
+  btnGenerate: { padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', alignSelf: 'flex-end' }, 
+  errorText: { fontSize: '12px', color: '#ef4444', marginTop: '8px' },
    summaryGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }, 
    statCard: { background: 'white', borderRadius: '14px', padding: '18px 20px', border: '1px solid #e2e8f0' }, 
    statLabel: { fontSize: '11px', color: '#94a3b8', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px' }, 

@@ -16,6 +16,26 @@ const errorHandler = (err, req, res, _next) => {
     });
   }
 
+  // Multer upload errors
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      success: false,
+      message: 'File too large. Max size is 5MB per file.',
+    });
+  }
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    return res.status(400).json({
+      success: false,
+      message: 'Too many files uploaded. Please limit evidence files.',
+    });
+  }
+  if (err.message && err.message.includes('Unsupported file type')) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+
   // Mongoose duplicate key error
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];

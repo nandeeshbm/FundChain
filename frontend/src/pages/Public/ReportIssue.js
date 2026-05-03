@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
 
@@ -22,6 +22,9 @@ const ReportIssue = () => {
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(null);
   const [receipt, setReceipt] = useState(null);
+  const [evidenceFiles, setEvidenceFiles] = useState([]);
+  const photoInputRef = useRef(null);
+  const docInputRef = useRef(null);
   const [formData, setFormData] = useState({
     projectId: '',
     selectedProject: '',
@@ -85,16 +88,32 @@ const ReportIssue = () => {
     }));
   };
 
+  const addEvidenceFiles = (files, type) => {
+    if (!files || files.length === 0) return;
+    const incoming = Array.from(files).map((file) => ({ file, type }));
+    setEvidenceFiles((prev) => [...prev, ...incoming]);
+  };
+
+  const removeEvidenceFile = (index) => {
+    setEvidenceFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const downloadReceipt = (report) => {
     if (!report) return;
+    const observationText = report.observation || formData.observation;
+    const descriptionText = report.description || formData.description;
+    const evidenceText = report.evidenceFiles && report.evidenceFiles.length
+      ? report.evidenceFiles.join(', ')
+      : 'None';
     const lines = [
       `Report ID: ${report.reportId}`,
       `Project ID: ${report.projectId}`,
       `Project Name: ${report.projectName}`,
       `Submitted At: ${new Date(report.createdAt).toLocaleString('en-IN')}`,
       '',
-      `Observation: ${formData.observation}`,
-      `Description: ${formData.description}`,
+      `Observation: ${observationText}`,
+      `Description: ${descriptionText}`,
+      `Evidence Files: ${evidenceText}`,
       `Anonymous: ${report.anonymous ? 'Yes' : 'No'}`,
       report.anonymous ? 'Reporter details were protected.' : `Reporter: ${report.reporterName || 'N/A'} / ${report.reporterEmail || 'N/A'} / ${report.reporterPhone || 'N/A'}`,
     ].join('\n');
@@ -130,14 +149,18 @@ const ReportIssue = () => {
 
     setSubmitLoading(true);
     try {
-      const res = await axios.post(`${API}/public/report-issues`, {
-        projectId: projectSelection,
-        observation: formData.observation,
-        description: formData.description,
-        anonymous: formData.anonymous,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
+      const payload = new FormData();
+      payload.append('projectId', projectSelection);
+      payload.append('observation', formData.observation);
+      payload.append('description', formData.description);
+      payload.append('anonymous', formData.anonymous ? 'true' : 'false');
+      payload.append('name', formData.name);
+      payload.append('email', formData.email);
+      payload.append('phone', formData.phone);
+      evidenceFiles.forEach((item) => payload.append('evidenceFiles', item.file));
+
+      const res = await axios.post(`${API}/public/report-issues`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       if (res.data.success) {
@@ -150,6 +173,7 @@ const ReportIssue = () => {
           anonymous: formData.anonymous,
           observation: formData.observation,
           description: formData.description,
+          evidenceFiles: evidenceFiles.map((item) => item.file.name),
           reporterName: formData.name || null,
           reporterEmail: formData.email || null,
           reporterPhone: formData.phone || null,
@@ -164,12 +188,21 @@ const ReportIssue = () => {
           phone: '',
           anonymous: true,
         });
+        setEvidenceFiles([]);
       } else {
         setSubmitError('Unable to submit the issue report. Please try again later.');
       }
     } catch (err) {
       console.error(err);
-      setSubmitError('Unable to submit the issue report. Please try again later.');
+      const apiMessage = err?.response?.data?.message;
+      const apiErrors = err?.response?.data?.errors;
+      if (apiErrors && apiErrors.length) {
+        setSubmitError(apiErrors.join(' '));
+      } else if (apiMessage) {
+        setSubmitError(apiMessage);
+      } else {
+        setSubmitError('Unable to submit the issue report. Please try again later.');
+      }
     } finally {
       setSubmitLoading(false);
     }
@@ -250,9 +283,48 @@ const ReportIssue = () => {
         <div style={styles.section}>
           <label style={styles.label}>Upload Evidence (Optional)</label>
           <div style={styles.inlineRow}>
-            <button type='button' style={styles.ghostBtn} onClick={() => alert('Photo upload placeholder (dummy).')}>Upload Photos</button>
-            <button type='button' style={styles.ghostBtn} onClick={() => alert('Document upload placeholder (dummy).')}>Upload Documents</button>
+            <input
+              ref={photoInputRef}
+              type='file'
+              accept='image/*'
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                addEvidenceFiles(e.target.files, 'photo');
+                e.target.value = null;
+              }}
+            />
+            <input
+              ref={docInputRef}
+              type='file'
+              accept='.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                addEvidenceFiles(e.target.files, 'document');
+                e.target.value = null;
+              }}
+            />
+            <button type='button' style={styles.ghostBtn} onClick={() => photoInputRef.current?.click()}>
+              Upload Photos
+            </button>
+            <button type='button' style={styles.ghostBtn} onClick={() => docInputRef.current?.click()}>
+              Upload Documents
+            </button>
           </div>
+          <div style={styles.helperNote}>Accepted: JPG, PNG, WEBP, PDF, DOC, DOCX. Max 5MB each.</div>
+          {evidenceFiles.length > 0 && (
+            <div style={styles.fileList}>
+              {evidenceFiles.map((item, index) => (
+                <div key={`${item.file.name}-${index}`} style={styles.fileItem}>
+                  <span style={styles.fileName}>{item.file.name}</span>
+                  <button type='button' style={styles.fileRemove} onClick={() => removeEvidenceFile(index)}>
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={styles.section}>
@@ -313,12 +385,17 @@ const styles = {
   orText: { color: '#94a3b8', fontSize: '0.85rem' },
   input: { flex: 1, border: '1px solid #dbe2ea', borderRadius: '10px', background: '#f8fafc', padding: '10px 12px', outline: 'none' },
   helperText: { marginTop: '8px', fontSize: '0.82rem', color: '#ef4444' },
+  helperNote: { marginTop: '8px', fontSize: '0.8rem', color: '#64748b' },
   optionGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
   optionCard: { textAlign: 'left', border: '1px solid #e2e8f0', borderRadius: '10px', background: '#f8fafc', padding: '10px', color: '#334155', display: 'flex', gap: '8px', cursor: 'pointer' },
   optionCardActive: { border: '1px solid #93c5fd', background: '#eff6ff', color: '#1e3a8a' },
   optionRadio: { width: '20px', textAlign: 'center' },
   textarea: { width: '100%', minHeight: '130px', border: '1px solid #dbe2ea', borderRadius: '10px', background: '#f8fafc', padding: '12px', resize: 'vertical', outline: 'none' },
   ghostBtn: { flex: 1, border: '1px solid #dbe2ea', borderRadius: '10px', background: '#fff', padding: '10px 12px', cursor: 'pointer', fontWeight: 600, color: '#475569' },
+  fileList: { marginTop: 10, display: 'grid', gap: 8 },
+  fileItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#f8fafc' },
+  fileName: { fontSize: '0.82rem', color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis' },
+  fileRemove: { border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontWeight: 700 },
   detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' },
   toggleRow: { width: '100%', border: '1px solid #dbe2ea', borderRadius: '10px', background: '#f8fafc', padding: '10px 12px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' },
   toggleIcon: { fontSize: '1.1rem' },

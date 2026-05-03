@@ -64,7 +64,7 @@ const createIssueReportSchema = Joi.object({
   projectId: Joi.string().trim().required(),
   observation: Joi.string().trim().min(5).required(),
   description: Joi.string().trim().min(10).required(),
-  anonymous: Joi.boolean().required(),
+  anonymous: Joi.boolean().truthy('true').falsy('false').required(),
   name: Joi.string().trim().allow(null, '').optional(),
   email: Joi.string().email().allow(null, '').optional(),
   phone: Joi.string().trim().allow(null, '').optional(),
@@ -103,6 +103,11 @@ const resolveTransactionSchema = Joi.object({
   resolutionNote: Joi.string().trim().min(2).required(),
 });
 
+const resolveIssueReportSchema = Joi.object({
+  resolutionStatus: Joi.string().valid('validated', 'dismissed', 'frozen').required(),
+  resolutionNote: Joi.string().trim().min(2).required(),
+});
+
 const createVendorSchema = Joi.object({
   vendorName: Joi.string().trim().min(2).max(100).required(),
   companyName: Joi.string().trim().min(2).max(200).required(),
@@ -135,6 +140,7 @@ module.exports = {
   submitProofSchema,
   releaseFundsSchema,
   resolveTransactionSchema,
+  resolveIssueReportSchema,
   createVendorSchema,
   updateVendorSchema,
 };

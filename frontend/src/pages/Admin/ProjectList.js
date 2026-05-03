@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-
-const API = "http://localhost:5000/api";
-const getToken = () => localStorage.getItem("token");
-const authHeader = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
+import { useGovtAPI } from "../../hooks/useGovtAPI";
 
 function ProjectList() {
+  const { 
+    loading: apiLoading, 
+    fetchProjects: apiFetchProjects, 
+    createProject: apiCreateProject,
+    fetchVendors: apiFetchVendors 
+  } = useGovtAPI();
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -25,24 +28,20 @@ function ProjectList() {
     requiredProofs: { sitePhoto: true, materialReceipt: true, completionCertificate: true },
   });
 
-  const fetchProjects = async () => {
-    try {
-      const res = await axios.get(`${API}/admin/projects?search=${search}`, authHeader());
-      if (res.data.success) setProjects(res.data.data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+  const loadProjects = async () => {
+    const data = await apiFetchProjects(search);
+    if (data.success) setProjects(data.data);
+    setLoading(false);
   };
 
-  const fetchVendors = async () => {
-    try {
-      const res = await axios.get(`${API}/admin/vendors`, authHeader());
-      if (res.data.success) setVendors(res.data.data);
-    } catch (err) { console.error(err); }
+  const loadVendors = async () => {
+    const data = await apiFetchVendors();
+    if (data.success) setVendors(data.data);
   };
 
-  useEffect(() => { fetchProjects(); }, [search]);
+  useEffect(() => { loadProjects(); }, [search]);
 
-  const openModal = () => { fetchVendors(); setShowModal(true); };
+  const openModal = () => { loadVendors(); setShowModal(true); };
 
   const updateMilestone = (idx, field, val) => {
     const m = [...form.milestoneBreakdown];
@@ -65,14 +64,16 @@ function ProjectList() {
           ...m, amount: Number(m.amount),
         })),
       };
-      const res = await axios.post(`${API}/admin/projects`, payload, authHeader());
-      if (res.data.success) {
+      const res = await apiCreateProject(payload);
+      if (res.success) {
         setShowModal(false);
-        fetchProjects();
+        loadProjects();
         alert("Project created successfully!");
+      } else {
+        alert(res.message || "Failed to create project");
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to create project");
+      alert("Failed to create project");
     } finally { setCreating(false); }
   };
 

@@ -7,15 +7,17 @@ const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.get
 const AlertsModule = () => {
   const [flagged, setFlagged] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [freezeLogs, setFreezeLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState({ high: 0, medium: 0, low: 0, resolved: 0 });
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const [flagRes, auditRes] = await Promise.all([
+        const [flagRes, auditRes, freezeRes] = await Promise.all([
           axios.get(`${API}/auditor/flagged-transactions?limit=20`, authHeader()),
           axios.get(`${API}/transactions?limit=10`, authHeader()),
+          axios.get(`${API}/admin/audit-logs?action=PROJECT_FROZEN&limit=10`, authHeader()),
         ]);
         if (flagRes.data.success) {
           const items = flagRes.data.data;
@@ -28,6 +30,7 @@ const AlertsModule = () => {
           });
         }
         if (auditRes.data.success) setAuditLogs(auditRes.data.data);
+        if (freezeRes.data.success) setFreezeLogs(freezeRes.data.data || []);
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
     };
@@ -100,26 +103,46 @@ const AlertsModule = () => {
           )}
         </div>
 
-        {/* Activity Log */}
-        <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: 14 }}>
-            🔒 24/7 Security Guard Log
-          </div>
-          <div style={{ padding: 16 }}>
-            {auditLogs.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#94a3b8', padding: 20 }}>No recent activity</div>
-            ) : auditLogs.map((log) => (
-              <div key={log._id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: log.sentinelStatus === 'flagged' ? '#ef4444' : '#10b981' }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>
-                    {log.sentinelStatus === 'flagged' ? '🚨 Sentinel Flag' : '✅ Clean Transaction'} — {log.type}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{log.projectNameSnapshot} · {timeAgo(log.createdAt)}</div>
+        <div style={{ display: 'grid', gap: 20 }}>
+          {/* Auditor Freeze Notifications */}
+          <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: 14 }}>
+              🧾 Auditor Freeze Notifications
+            </div>
+            <div style={{ padding: 16 }}>
+              {freezeLogs.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#94a3b8', padding: 20 }}>No recent freeze actions</div>
+              ) : freezeLogs.map((log) => (
+                <div key={log._id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#ef4444' }}>🚨 Vault Frozen</div>
+                  <div style={{ fontSize: 12, color: '#1e293b', marginTop: 6 }}>{log.reason || 'Auditor froze a project vault'}</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{timeAgo(log.createdAt)}</div>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>₹ {Number(log.amount).toLocaleString('en-IN')}</div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Activity Log */}
+          <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: 14 }}>
+              🔒 24/7 Security Guard Log
+            </div>
+            <div style={{ padding: 16 }}>
+              {auditLogs.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#94a3b8', padding: 20 }}>No recent activity</div>
+              ) : auditLogs.map((log) => (
+                <div key={log._id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: log.sentinelStatus === 'flagged' ? '#ef4444' : '#10b981' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>
+                      {log.sentinelStatus === 'flagged' ? '🚨 Sentinel Flag' : '✅ Clean Transaction'} — {log.type}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{log.projectNameSnapshot} · {timeAgo(log.createdAt)}</div>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>₹ {Number(log.amount).toLocaleString('en-IN')}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

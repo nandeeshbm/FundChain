@@ -10,6 +10,8 @@ const AuditorCommandCenter = () => {
   const [allTransactions, setAllTransactions] = useState([]);
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [reviewDetail, setReviewDetail] = useState(null);
+  const [publicReports, setPublicReports] = useState([]);
+  const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resolving, setResolving] = useState(false);
   const [resolutionNote, setResolutionNote] = useState('');
@@ -21,12 +23,14 @@ const AuditorCommandCenter = () => {
 
   const fetchAll = async () => {
     try {
-      const [f, t] = await Promise.all([
+      const [f, t, r] = await Promise.all([
         axios.get(`${API}/auditor/flagged-transactions?limit=50`, authHeader()),
         axios.get(`${API}/transactions?limit=50`, authHeader()),
+        axios.get(`${API}/auditor/report-issues?status=new&limit=50`, authHeader()),
       ]);
       if (f.data.success) setFlaggedClaims(f.data.data || []);
       if (t.data.success) setAllTransactions(t.data.data || []);
+      if (r.data.success) setPublicReports(r.data.data || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -35,11 +39,19 @@ const AuditorCommandCenter = () => {
 
   const investigateClaim = async (claim) => {
     setSelectedClaim(claim);
+    setSelectedReport(null);
     setResolutionNote('');
     try {
       const res = await axios.get(`${API}/auditor/transactions/${claim.txnId}/review`, authHeader());
       if (res.data.success) setReviewDetail(res.data.data);
     } catch (err) { console.error(err); }
+  };
+
+  const selectReport = (report) => {
+    setSelectedReport(report);
+    setSelectedClaim(null);
+    setReviewDetail(null);
+    setResolutionNote('');
   };
 
   const handleResolve = async (resolutionStatus) => {
@@ -55,6 +67,13 @@ const AuditorCommandCenter = () => {
         authHeader()
       );
       if (res.data.success) {
+        if (resolutionStatus === 'frozen') {
+          await axios.post(
+            `${API}/auditor/projects/${selectedClaim.projectId?.projectId || selectedClaim.projectId}/freeze`,
+            { frozen: true, reason: resolutionNote, source: 'public_witness' },
+            authHeader()
+          );
+        }
         alert(`✅ Resolution recorded: ${resolutionStatus}`);
         setSelectedClaim(null);
         setReviewDetail(null);
@@ -65,6 +84,40 @@ const AuditorCommandCenter = () => {
     } finally { setResolving(false); }
   };
 
+  const handleResolveReport = async (resolutionStatus) => {
+    if (!resolutionNote.trim()) {
+      alert('Please enter a resolution note before proceeding');
+      return;
+    }
+    if (!selectedReport) return;
+
+    setResolving(true);
+    try {
+      await axios.post(
+        `${API}/auditor/report-issues/${selectedReport._id}/resolve`,
+        { resolutionStatus, resolutionNote },
+        authHeader()
+      );
+
+      if (resolutionStatus === 'frozen') {
+        await axios.post(
+          `${API}/auditor/projects/${selectedReport.projectId}/freeze`,
+          { frozen: true, reason: resolutionNote, source: 'public_witness' },
+          authHeader()
+        );
+      }
+
+      alert('✅ Public report reviewed');
+      setSelectedReport(null);
+      setResolutionNote('');
+      fetchFlagged();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to resolve');
+    } finally {
+      setResolving(false);
+    }
+  };
+
   const theme = {
     navy: '#0f1f3d', blueLight: '#2563eb', green: '#10b981',
     amber: '#f59e0b', red: '#ef4444', gray50: '#f8fafc',
@@ -73,7 +126,7 @@ const AuditorCommandCenter = () => {
 
   const styles = {
     container: { background: 'transparent', fontFamily: "'Sora', sans-serif" },
-    grid: { display: 'grid', gridTemplateColumns: selectedClaim ? '1fr 1fr' : '1fr', gap: 24, transition: 'all 0.3s' },
+    grid: { display: 'grid', gridTemplateColumns: selectedClaim || selectedReport ? '1fr 1fr' : '1fr', gap: 24, transition: 'all 0.3s' },
     card: { background: 'white', borderRadius: 16, border: `1px solid ${theme.gray200}`, overflow: 'hidden' },
     th: { background: theme.gray50, padding: '12px 16px', textAlign: 'left', fontSize: 11, color: theme.gray600, textTransform: 'uppercase', borderBottom: `1px solid ${theme.gray200}` },
     td: { padding: 16, fontSize: 13, borderBottom: `1px solid ${theme.gray100}` },
@@ -108,8 +161,40 @@ const AuditorCommandCenter = () => {
       </div>
 
       <div style={styles.grid}>
-        {/* Transaction List */}
-        <div style={styles.card}>
+        <div style={{ display: 'grid', gap: 20 }}>
+          {/* Public Witness Reports */}
+          <div style={styles.card}>
+            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${theme.gray200}`, fontWeight: 700, fontSize: 13 }}>
+              🚨 Public Witness Reports ({publicReports.length})
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Report ID</th>
+                  <th style={styles.th}>Project</th>
+                  <th style={styles.th}>Observation</th>
+                  <th style={styles.th}>Time</th>
+                  <th style={styles.th}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {publicReports.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: '#94a3b8' }}>No public reports yet.</td></tr>
+                ) : publicReports.map((report) => (
+                  <tr key={report._id} style={{ cursor: 'pointer', background: selectedReport?._id === report._id ? 'rgba(239,68,68,0.05)' : 'white' }} onClick={() => selectReport(report)}>
+                    <td style={{ ...styles.td, fontFamily: 'monospace', fontWeight: 700, color: theme.red }}>{report._id.slice(-8)}</td>
+                    <td style={styles.td}>{report.projectName || report.projectId}</td>
+                    <td style={{ ...styles.td, fontSize: 12, color: '#475569' }}>{report.observation}</td>
+                    <td style={{ ...styles.td, fontSize: 11, color: '#94a3b8' }}>{new Date(report.createdAt).toLocaleString('en-IN')}</td>
+                    <td style={styles.td}><button style={{ padding: '6px 10px', border: 'none', borderRadius: 6, background: 'rgba(239,68,68,0.1)', color: theme.red, fontWeight: 700 }}>Review</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Transaction List */}
+          <div style={styles.card}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -152,31 +237,51 @@ const AuditorCommandCenter = () => {
           </table>
         </div>
 
-        {/* Investigation Panel */}
-        {selectedClaim && (
+        </div>
+
+        {(selectedClaim || selectedReport) && (
           <div style={styles.panel}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ fontWeight: 700, fontSize: 15 }}>Reviewing {selectedClaim.txnId}</h3>
-              <button onClick={() => { setSelectedClaim(null); setReviewDetail(null); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: theme.gray600 }}>✕ Close</button>
+              <h3 style={{ fontWeight: 700, fontSize: 15 }}>
+                {selectedReport ? `Reviewing Public Report ${selectedReport._id.slice(-6)}` : `Reviewing ${selectedClaim.txnId}`}
+              </h3>
+              <button onClick={() => { setSelectedClaim(null); setReviewDetail(null); setSelectedReport(null); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: theme.gray600 }}>✕ Close</button>
             </div>
 
             <div style={styles.alertBanner}>
-              <span>🚨 Sentinel Flag: {selectedClaim.sentinelStatus}</span>
+              <span>{selectedReport ? '🚨 Flagged by Public Witness' : '🚨 Sentinel Flag'}</span>
             </div>
 
-            {/* Verification Checks */}
-            <div style={styles.verifyBox}>
-              <span style={styles.verifyLabel}>Transaction Type</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>{selectedClaim.type}</span>
-            </div>
-            <div style={styles.verifyBox}>
-              <span style={styles.verifyLabel}>Amount</span>
-              <span style={{ fontSize: 12, fontWeight: 700 }}>₹ {Number(selectedClaim.amount).toLocaleString('en-IN')}</span>
-            </div>
-            <div style={styles.verifyBox}>
-              <span style={styles.verifyLabel}>Status</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: theme.red }}>{selectedClaim.sentinelStatus}</span>
-            </div>
+            {selectedClaim && (
+              <>
+                <div style={styles.verifyBox}>
+                  <span style={styles.verifyLabel}>Transaction Type</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: theme.text }}>{selectedClaim.type}</span>
+                </div>
+                <div style={styles.verifyBox}>
+                  <span style={styles.verifyLabel}>Amount</span>
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>₹ {Number(selectedClaim.amount).toLocaleString('en-IN')}</span>
+                </div>
+                <div style={styles.verifyBox}>
+                  <span style={styles.verifyLabel}>Status</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: theme.red }}>{selectedClaim.sentinelStatus}</span>
+                </div>
+              </>
+            )}
+
+            {selectedReport && (
+              <>
+                <div style={styles.verifyBox}>
+                  <span style={styles.verifyLabel}>Project</span>
+                  <span style={{ fontSize: 12, fontWeight: 700 }}>{selectedReport.projectName || selectedReport.projectId}</span>
+                </div>
+                <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 8, padding: 12, marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: theme.red, marginBottom: 6 }}>Witness Observation</div>
+                  <div style={{ fontSize: 12, color: '#475569' }}>{selectedReport.observation}</div>
+                  <div style={{ fontSize: 12, color: '#475569', marginTop: 6 }}>{selectedReport.description}</div>
+                </div>
+              </>
+            )}
 
             {/* Proof details if available */}
             {reviewDetail?.proof && (
@@ -202,9 +307,17 @@ const AuditorCommandCenter = () => {
             </div>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button style={styles.btnApprove} disabled={resolving} onClick={() => handleResolve('resolved')}>✅ Resolve</button>
-              <button style={styles.btnDismiss} disabled={resolving} onClick={() => handleResolve('escalated')}>⬆ Escalate</button>
-              <button style={styles.btnFreeze} disabled={resolving} onClick={() => handleResolve('dismissed')}>❌ Dismiss</button>
+              {selectedReport ? (
+                <>
+                  <button style={styles.btnFreeze} disabled={resolving} onClick={() => handleResolveReport('frozen')}>🧊 Freeze Vault</button>
+                  <button style={styles.btnDismiss} disabled={resolving} onClick={() => handleResolveReport('dismissed')}>❌ Dismiss</button>
+                </>
+              ) : (
+                <>
+                  <button style={styles.btnFreeze} disabled={resolving} onClick={() => handleResolve('frozen')}>🧊 Freeze Vault</button>
+                  <button style={styles.btnDismiss} disabled={resolving} onClick={() => handleResolve('dismissed')}>❌ Dismiss</button>
+                </>
+              )}
             </div>
           </div>
         )}

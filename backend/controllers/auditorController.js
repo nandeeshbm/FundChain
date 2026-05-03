@@ -66,9 +66,6 @@ const resolveTransaction = async (req, res, next) => {
     if (resolutionStatus === 'resolved') {
       txn.sentinelStatus = 'success';
       txn.status = 'success';
-    } else if (resolutionStatus === 'frozen') {
-      txn.sentinelStatus = 'flagged';
-      txn.status = 'flagged';
     } else if (resolutionStatus === 'escalated') {
       txn.sentinelStatus = 'flagged';
     } else {
@@ -81,7 +78,7 @@ const resolveTransaction = async (req, res, next) => {
       const ms = await Milestone.findById(txn.milestoneId);
       if (ms) {
         if (resolutionStatus === 'resolved') ms.status = 'verified';
-        else if (resolutionStatus === 'frozen') ms.status = 'flagged';
+        else if (resolutionStatus === 'escalated') ms.status = 'flagged';
         await ms.save();
       }
     }
@@ -103,7 +100,7 @@ const resolveTransaction = async (req, res, next) => {
 // POST /api/auditor/projects/:projectId/freeze
 const freezeProject = async (req, res, next) => {
   try {
-    const { frozen, reason } = req.body;
+    const { frozen, reason, source } = req.body;
     const project = await Project.findOne({ projectId: req.params.projectId });
     if (!project) return apiResponse.error(res, 'Project not found', [], 404);
 
@@ -121,6 +118,28 @@ const freezeProject = async (req, res, next) => {
     project.status = frozen ? 'flagged' : 'active';
     await project.save();
 
+    if (frozen && source === 'public_witness' && project.contractorId) {
+      const Vendor = require('../models/Vendor');
+      const vendor = await Vendor.findById(project.contractorId);
+      if (vendor) {
+        vendor.anomalyScore = Math.max(0, (vendor.anomalyScore || 0) + 5);
+        await vendor.save();
+
+        await auditService.logAction({
+          userId: req.user._id,
+          userRole: req.user.role,
+          action: 'VENDOR_TRUST_SCORE_DECREASED',
+          entityType: 'vendor',
+          entityId: vendor.registryId,
+          projectId: project._id,
+          newValues: { anomalyScore: vendor.anomalyScore, source },
+          reason: reason || 'Public witness report validated',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        });
+      }
+    }
+
     await auditService.logAction({
       userId: req.user._id,
       userRole: req.user.role,
@@ -128,7 +147,7 @@ const freezeProject = async (req, res, next) => {
       entityType: 'project',
       entityId: project.projectId,
       projectId: project._id,
-      newValues: { frozen, reason, txHash: onChainTxHash },
+      newValues: { frozen, reason, txHash: onChainTxHash, source: source || 'manual' },
       reason,
       ipAddress: req.ip,
     });
