@@ -3,16 +3,19 @@ import React, { useState } from "react";
 function PublicSettings() {
   const [notifications, setNotifications] = useState(true);
   const [highContrast, setHighContrast] = useState(false);
+  const [autoTranslate, setAutoTranslate] = useState(false);
+  const [cityFocus, setCityFocus] = useState("mumbai");
+  const [projectCategory, setProjectCategory] = useState("all");
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <h2 style={styles.title}>Public Settings</h2>
-        <p style={styles.subtitle}>Personalize your public tracking experience. All settings are dummy for demo.</p>
+        <p style={styles.subtitle}>Customize how you discover projects, get alerts, and read transparency data.</p>
 
         <div style={styles.field}>
           <label style={styles.label}>Default City Focus</label>
-          <select style={styles.input} defaultValue="mumbai">
+          <select style={styles.input} value={cityFocus} onChange={(e) => setCityFocus(e.target.value)}>
             <option value="mumbai">Mumbai</option>
             <option value="pune">Pune</option>
             <option value="delhi">Delhi</option>
@@ -21,7 +24,7 @@ function PublicSettings() {
 
         <div style={styles.field}>
           <label style={styles.label}>Preferred Project Category</label>
-          <select style={styles.input} defaultValue="all">
+          <select style={styles.input} value={projectCategory} onChange={(e) => setProjectCategory(e.target.value)}>
             <option value="all">All Categories</option>
             <option value="healthcare">Healthcare</option>
             <option value="education">Education</option>
@@ -45,9 +48,18 @@ function PublicSettings() {
           </div>
         </div>
 
+        <div style={styles.toggleRow}>
+          <button style={styles.toggleBtn} onClick={() => setAutoTranslate((v) => !v)}>{autoTranslate ? "ON" : "OFF"}</button>
+          <div>
+            <div style={styles.toggleTitle}>Auto Translate Summaries</div>
+            <div style={styles.toggleSub}>Show project summaries in your preferred language.</div>
+          </div>
+        </div>
+
         <div style={styles.actions}>
-          <button style={styles.secondaryBtn} onClick={() => alert("Public settings reset (dummy).")}>Reset</button>
-          <button style={styles.primaryBtn} onClick={() => alert("Public settings saved (dummy).")}>Save Settings</button>
+          <button style={styles.secondaryBtn} onClick={() => alert("Public preferences reset.")}>Reset</button>
+          <button style={styles.secondaryBtn} onClick={() => alert(`Preview updated for ${cityFocus} (${projectCategory}).`)}>Preview Feed</button>
+          <button style={styles.primaryBtn} onClick={() => alert("Public settings saved.")}>Save Settings</button>
         </div>
       </div>
     </div>

@@ -1,133 +1,109 @@
-import React, { useState } from 'react'; 
- 
- const SettingsModule = () => { 
-   // State for Tab Management 
-   const [activeTab, setActiveTab] = useState('General'); 
- 
-   // State for Governance Rules 
-   const [autoFreeze, setAutoFreeze] = useState(true); 
-   const [citizenFeed, setCitizenFeed] = useState(true); 
- 
-   return ( 
-     <div className="settings-panel"> 
-       {/* Visual Identity & Logic Styles */} 
-       <style>{` 
-        .settings-panel { 
-           background: #fff; border-radius: 10px; padding: 24px; 
-           box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-family: 'Sora', sans-serif; 
-         } 
-        .settings-tabs { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 24px; } 
-        .settings-tab { 
-           padding: 10px 18px; color: #6b7280; font-weight: 500; 
-           border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; 
-         } 
-        .tab-active { color: #2563eb; border-bottom-color: #2563eb; } 
-         
-        .form-group { margin-bottom: 20px; } 
-        .form-label { font-size: 12px; font-weight: 600; display: block; margin-bottom: 8px; color: #1a2540; } 
-        .form-input { 
-           width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; 
-           font-family: inherit; font-size: 13px; outline: none; background: #f9fafb; 
-         } 
-        .form-input:focus { border-color: #2563eb; background: #fff; } 
- 
-        .toggle-item { 
-           display: flex; justify-content: space-between; align-items: center; 
-           padding: 14px 0; border-bottom: 1px solid #f3f4f6; 
-         } 
-        .toggle-switch { 
-           width: 44px; height: 22px; border-radius: 11px; position: relative; 
-           cursor: pointer; transition: background 0.3s; 
-         } 
-        .toggle-on { background: #22c55e; } 
-        .toggle-off { background: #e5e7eb; } 
-        .toggle-switch::after { 
-           content: ''; position: absolute; top: 2px; width: 18px; height: 18px; 
-           background: #fff; border-radius: 50%; transition: all 0.3s; 
-           box-shadow: 0 1px 2px rgba(0,0,0,0.2); 
-         } 
-        .toggle-on::after { left: 24px; } 
-        .toggle-off::after { left: 2px; } 
- 
-        .save-btn { 
-           background: #2563eb; color: #fff; border: none; padding: 12px 24px; 
-           border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; 
-         } 
-        .save-btn:hover { background: #1d4ed8; } 
-       `}</style> 
- 
-       {/* Tabs: Governance Architecture Selection */} 
-       <div className="settings-tabs"> 
-         <div 
-           className={`settings-tab ${activeTab === 'General'? 'tab-active' : ''}`} 
-           onClick={() => setActiveTab('General')} 
-         > 
-           General Governance 
-         </div> 
-         <div 
-           className={`settings-tab ${activeTab === 'Vault'? 'tab-active' : ''}`} 
-           onClick={() => setActiveTab('Vault')} 
-         > 
-           Vault Config 
-         </div> 
-         <div 
-           className={`settings-tab ${activeTab === 'DID'? 'tab-active' : ''}`} 
-           onClick={() => setActiveTab('DID')} 
-         > 
-           DID / Security 
-         </div> 
-       </div> 
- 
-       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '40px' }}> 
-         {/* Left Column: Smart Contract Parameters */} 
-         <div> 
-           <div className="form-group"> 
-             <label className="form-label">System Governance Name</label> 
-             <input className="form-input" type="text" defaultValue="Quantrix Public Fund Tracking" /> 
-           </div> 
-           <div className="form-group"> 
-             <label className="form-label">Vault Multisig Threshold (M-of-N)</label> 
-             <select className="form-input"> 
-               <option>3 of 5 required signatures</option> 
-               <option>4 of 7 required signatures</option> 
-               <option>Unanimous (Not Recommended)</option> 
-             </select> 
-           </div> 
-         </div> 
- 
-         {/* Right Column: AI & Transparency Toggles */} 
-         <div> 
-           <div className="toggle-item"> 
-             <div> 
-               <div style={{ fontSize: '13px', fontWeight: 600 }}>Autonomous Freeze</div> 
-               <div style={{ fontSize: '11px', color: '#9ca3af' }}>Enable AI to pause vault instantly</div> 
-             </div> 
-             <div 
-               className={`toggle-switch ${autoFreeze? 'toggle-on' : 'toggle-off'}`} 
-               onClick={() => setAutoFreeze(!autoFreeze)} 
-             /> 
-           </div> 
-           
-           <div className="toggle-item"> 
-             <div> 
-               <div style={{ fontSize: '13px', fontWeight: 600 }}>Citizen Map Feed</div> 
-               <div style={{ fontSize: '11px', color: '#9ca3af' }}>Sync verified proof to public map</div> 
-             </div> 
-             <div 
-               className={`toggle-switch ${citizenFeed? 'toggle-on' : 'toggle-off'}`} 
-               onClick={() => setCitizenFeed(!citizenFeed)} 
-             /> 
-           </div> 
-         </div> 
-       </div> 
- 
-       <div style={{ textAlign: 'right', marginTop: '30px' }}> 
-         <button className="save-btn" onClick={() => alert('Governance rules updated on-chain.')}> 
-           💾 Save Governance Rules 
-         </button> 
-       </div> 
-     </div> 
-   ); 
- }; 
- 
- export default SettingsModule;
+import React, { useState } from 'react';
+
+const SettingsModule = () => {
+  const [form, setForm] = useState({
+    governanceName: 'Public Fund Tracking System',
+    threshold: '3-of-5',
+    freezeAfterFlags: '3',
+    maxDailyRelease: '2500000',
+    autoFreeze: true,
+    citizenFeed: true,
+    requireAuditorSignOff: true,
+  });
+
+  const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>Admin Governance Settings</h2>
+        <p style={styles.sub}>
+          Configure treasury controls, automated safeguards, and transparency rules for all projects.
+        </p>
+
+        <div style={styles.grid}>
+          <div style={styles.field}>
+            <label style={styles.label}>Governance Profile Name</label>
+            <input style={styles.input} value={form.governanceName} onChange={(e) => update('governanceName', e.target.value)} />
+          </div>
+          <div style={styles.field}>
+            <label style={styles.label}>Vault Multisig Threshold</label>
+            <select style={styles.input} value={form.threshold} onChange={(e) => update('threshold', e.target.value)}>
+              <option value="3-of-5">3 of 5 Signatures</option>
+              <option value="4-of-7">4 of 7 Signatures</option>
+              <option value="2-of-3">2 of 3 Signatures</option>
+            </select>
+          </div>
+          <div style={styles.field}>
+            <label style={styles.label}>Auto-Freeze After Consecutive Flags</label>
+            <input style={styles.input} type="number" min="1" max="10" value={form.freezeAfterFlags} onChange={(e) => update('freezeAfterFlags', e.target.value)} />
+          </div>
+          <div style={styles.field}>
+            <label style={styles.label}>Max Daily Release (INR)</label>
+            <input style={styles.input} type="number" min="0" value={form.maxDailyRelease} onChange={(e) => update('maxDailyRelease', e.target.value)} />
+          </div>
+        </div>
+
+        <div style={styles.toggleWrap}>
+          <Toggle
+            title="Autonomous Freeze"
+            desc="Automatically lock projects when anomaly threshold is breached."
+            checked={form.autoFreeze}
+            onChange={() => update('autoFreeze', !form.autoFreeze)}
+          />
+          <Toggle
+            title="Citizen Transparency Feed"
+            desc="Publish validated milestones to Public Explorer and Live Map."
+            checked={form.citizenFeed}
+            onChange={() => update('citizenFeed', !form.citizenFeed)}
+          />
+          <Toggle
+            title="Mandatory Auditor Sign-Off"
+            desc="Block release until auditor review is completed."
+            checked={form.requireAuditorSignOff}
+            onChange={() => update('requireAuditorSignOff', !form.requireAuditorSignOff)}
+          />
+        </div>
+
+        <div style={styles.actions}>
+          <button style={styles.secondaryBtn} onClick={() => alert('Admin settings reverted to last saved config.')}>Reset</button>
+          <button style={styles.secondaryBtn} onClick={() => alert('Simulated governance dry-run completed.')}>Run Simulation</button>
+          <button style={styles.primaryBtn} onClick={() => alert('Admin governance settings saved successfully.')}>Save Governance Rules</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Toggle = ({ title, desc, checked, onChange }) => (
+  <div style={styles.toggleRow}>
+    <div>
+      <div style={styles.toggleTitle}>{title}</div>
+      <div style={styles.toggleSub}>{desc}</div>
+    </div>
+    <button onClick={onChange} style={{ ...styles.toggleBtn, background: checked ? '#10b981' : '#94a3b8' }}>
+      {checked ? 'ON' : 'OFF'}
+    </button>
+  </div>
+);
+
+const styles = {
+  page: { padding: 24, fontFamily: "'Inter', sans-serif" },
+  card: { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24 },
+  title: { margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#1e293b' },
+  sub: { margin: '8px 0 20px', fontSize: '0.92rem', color: '#64748b' },
+  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 },
+  field: { display: 'flex', flexDirection: 'column', gap: 8 },
+  label: { fontSize: '0.76rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { padding: '10px 12px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.92rem' },
+  toggleWrap: { marginTop: 18, display: 'grid', gap: 10 },
+  toggleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px' },
+  toggleTitle: { fontSize: '0.92rem', fontWeight: 700, color: '#1e293b' },
+  toggleSub: { fontSize: '0.82rem', color: '#64748b', marginTop: 3 },
+  toggleBtn: { border: 'none', color: '#fff', borderRadius: 8, minWidth: 58, padding: '8px 10px', fontWeight: 700, cursor: 'pointer' },
+  actions: { marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' },
+  secondaryBtn: { border: '1px solid #cbd5e1', background: '#fff', color: '#1e293b', borderRadius: 10, padding: '10px 14px', fontWeight: 600, cursor: 'pointer' },
+  primaryBtn: { border: 'none', background: '#0f1f3d', color: '#fff', borderRadius: 10, padding: '10px 14px', fontWeight: 700, cursor: 'pointer' },
+};
+
+export default SettingsModule;

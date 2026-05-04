@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import IndianEmblem from "../components/IndianEmblem";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -93,24 +94,25 @@ function Login() {
           --white: #ffffff; --gray-100: #f4f6fb; --gray-200: #e2e8f4;
           --gray-400: #94a3b8; --gray-600: #64748b; --text: #1e293b; --danger: #ef4444;
         }
-        body { font-family: 'DM Sans', sans-serif; background: var(--gray-100); margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; }
-        .login-root { font-family: 'DM Sans', sans-serif; height: 100vh; width: 100vw; display: flex; align-items: stretch; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--gray-100); margin: 0; padding: 0; min-height: 100vh; width: 100vw; overflow-x: hidden; overflow-y: auto; }
+        .login-root { font-family: 'DM Sans', sans-serif; min-height: 100vh; width: 100vw; display: flex; align-items: stretch; }
         .login-card { width: 100%; height: 100%; display: flex; background: white; overflow: hidden; }
-        .left-panel { width: 42%; background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 60px; position: relative; overflow: hidden; }
+        .left-panel { width: 42%; background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%); display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 12px; padding: 22px 34px 24px; position: relative; overflow-y: auto; scrollbar-width: none; }
+        .left-panel::-webkit-scrollbar { display: none; }
         .left-panel::before { content: ''; position: absolute; width: 500px; height: 500px; border-radius: 50%; background: rgba(245,166,35,0.07); top: -150px; left: -150px; animation: pulse 6s ease-in-out infinite; }
         .left-panel::after { content: ''; position: absolute; width: 350px; height: 350px; border-radius: 50%; background: rgba(255,255,255,0.04); bottom: -100px; right: -100px; animation: pulse 8s ease-in-out infinite reverse; }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-        .brand-icon { width: 90px; height: 90px; background: rgba(255,255,255,0.1); border: 2px solid rgba(245,166,35,0.4); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 28px; backdrop-filter: blur(10px); position: relative; z-index: 1; animation: floatY 4s ease-in-out infinite; }
-        @keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .brand-icon svg { width: 52px; height: 52px; fill: var(--gold); }
-        .brand-name { font-family: 'Playfair Display', serif; font-size: 2.8rem; color: var(--white); text-align: center; line-height: 1.1; margin-bottom: 16px; position: relative; z-index: 1; }
-        .brand-tagline { font-size: 0.95rem; color: rgba(255,255,255,0.55); letter-spacing: 4px; text-transform: uppercase; text-align: center; margin-bottom: 70px; position: relative; z-index: 1; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 400px; position: relative; z-index: 1; }
-        .stat-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 24px 20px; backdrop-filter: blur(8px); }
-        .stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.8px; margin-bottom: 8px; }
-        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--gold); }
-        .stat-sub { font-size: 0.8rem; color: rgba(255,255,255,0.35); margin-top: 4px; }
-        .right-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 80px; background: var(--white); }
+        .brand-icon { width: 72px; height: 72px; background: rgba(255,255,255,0.1); border: 2px solid rgba(245,166,35,0.4); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-top: 10px; margin-bottom: 10px; backdrop-filter: blur(10px); position: relative; z-index: 1; animation: floatY 4s ease-in-out infinite; }
+        @keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .brand-icon svg { width: 54px; height: 64px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--white); text-align: center; line-height: 1.1; margin-bottom: 8px; position: relative; z-index: 1; }
+        .brand-tagline { font-size: 0.75rem; color: rgba(255,255,255,0.5); letter-spacing: 2.4px; text-transform: uppercase; text-align: center; margin-bottom: 12px; position: relative; z-index: 1; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 380px; position: relative; z-index: 1; margin-top: auto; }
+        .stat-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 12px 12px; backdrop-filter: blur(8px); }
+        .stat-label { font-size: 0.65rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+        .stat-value { font-size: 1.1rem; font-weight: 700; color: var(--gold); }
+        .stat-sub { font-size: 0.72rem; color: rgba(255,255,255,0.32); margin-top: 3px; }
+        .right-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 56px; background: var(--white); }
         .login-form-container { width: 100%; max-width: 460px; animation: slideUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
         .login-header { margin-bottom: 44px; }
@@ -137,32 +139,36 @@ function Login() {
         .divider { text-align: center; position: relative; margin-bottom: 30px; }
         .divider::before { content: ''; position: absolute; left: 0; top: 50%; width: 100%; height: 1px; background: var(--gray-200); }
         .divider span { position: relative; background: var(--white); padding: 0 16px; font-size: 0.85rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 1.2px; }
-        .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        .role-btn { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 12px; border: 1.5px solid var(--gray-200); border-radius: 16px; background: var(--gray-100); cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.15s; font-family: inherit; }
-        .role-btn:hover, .role-btn.active { border-color: var(--navy-mid); background: rgba(26,50,96,0.05); transform: translateY(-3px); box-shadow: 0 10px 20px -5px rgba(26,50,96,0.1); }
-        .role-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .role-icon.admin { background: rgba(15,31,61,0.1); }
-        .role-icon.auditor { background: rgba(34,197,94,0.1); }
-        .role-icon.public { background: rgba(245,166,35,0.1); }
-        .role-icon svg { width: 24px; height: 24px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .role-icon.admin svg { stroke: var(--navy); }
-        .role-icon.auditor svg { stroke: var(--green); }
-        .role-icon.public svg { stroke: var(--gold); }
-        .role-name { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+        .role-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .role-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; border: 1.5px solid var(--gray-200); border-radius: 14px; background: var(--gray-100); cursor: pointer; transition: border-color 0.2s, background 0.2s, transform 0.18s, box-shadow 0.18s; font-family: inherit; }
+        .role-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px -4px rgba(15,31,61,0.12); }
+        .role-btn.active-admin { border-color: #f5a623; background: rgba(245,166,35,0.06); transform: translateY(-3px); box-shadow: 0 8px 20px -4px rgba(245,166,35,0.2); }
+        .role-btn.active-auditor { border-color: #3b82f6; background: rgba(59,130,246,0.06); transform: translateY(-3px); box-shadow: 0 8px 20px -4px rgba(59,130,246,0.2); }
+        .role-btn.active-contractor { border-color: #f59e0b; background: rgba(245,158,11,0.06); transform: translateY(-3px); box-shadow: 0 8px 20px -4px rgba(245,158,11,0.2); }
+        .role-btn.active-public { border-color: #10b981; background: rgba(16,185,129,0.06); transform: translateY(-3px); box-shadow: 0 8px 20px -4px rgba(16,185,129,0.2); }
+        .role-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
+        .role-icon.admin { background: rgba(245,166,35,0.12); }
+        .role-icon.auditor { background: rgba(59,130,246,0.12); }
+        .role-icon.contractor { background: rgba(245,158,11,0.12); }
+        .role-icon.public { background: rgba(16,185,129,0.12); }
+        .role-icon svg { width: 22px; height: 22px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .role-icon.admin svg { stroke: #d97706; }
+        .role-icon.auditor svg { stroke: #3b82f6; }
+        .role-icon.contractor svg { stroke: #f59e0b; }
+        .role-icon.public svg { stroke: #10b981; }
+        .role-name { font-size: 0.78rem; font-weight: 600; color: var(--text); }
         .error-msg { background: rgba(239,68,68,0.08); color: #ef4444; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; text-align: center; }
+        @media (max-height: 760px) {
+          .brand-name { font-size: 1.75rem; }
+          .right-panel { padding: 32px; }
+        }
         @media (max-width: 1024px) { .left-panel { display: none; } }
       `}</style>
 
       <div className="login-card">
         <div className="left-panel">
           <div className="brand-icon">
-            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-              <rect x="8" y="28" width="48" height="28" rx="2" />
-              <polygon points="4,28 32,6 60,28" />
-              <rect x="24" y="40" width="16" height="16" rx="1" />
-              <rect x="14" y="34" width="8" height="10" rx="1" fill="rgba(255,255,255,0.3)" />
-              <rect x="42" y="34" width="8" height="10" rx="1" fill="rgba(255,255,255,0.3)" />
-            </svg>
+            <IndianEmblem size={56} />
           </div>
           <h1 className="brand-name">Public Fund<br />Tracking System</h1>
           <p className="brand-tagline">Transparent · Accountable · Trusted</p>
@@ -226,21 +232,29 @@ function Login() {
 
             <div className="divider"><span>Login as</span></div>
 
-            <div className="role-grid" style={{gridTemplateColumns: 'repeat(4,1fr)'}}>
-              <button className={`role-btn ${role === "admin" ? "active" : ""}`} onClick={() => selectRole("admin")} type="button">
-                <div className="role-icon admin"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg></div>
+            <div className="role-grid">
+              <button className={`role-btn ${role === "admin" ? "active-admin" : ""}`} onClick={() => selectRole("admin")} type="button">
+                <div className="role-icon admin">
+                  <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
                 <span className="role-name">Admin</span>
               </button>
-              <button className={`role-btn ${role === "auditor" ? "active" : ""}`} onClick={() => selectRole("auditor")} type="button">
-                <div className="role-icon auditor"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg></div>
+              <button className={`role-btn ${role === "auditor" ? "active-auditor" : ""}`} onClick={() => selectRole("auditor")} type="button">
+                <div className="role-icon auditor">
+                  <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+                </div>
                 <span className="role-name">Auditor</span>
               </button>
-              <button className={`role-btn ${role === "contractor" ? "active" : ""}`} onClick={() => selectRole("contractor")} type="button">
-                <div className="role-icon" style={{background:'rgba(245,158,11,0.1)'}}><svg viewBox="0 0 24 24" style={{stroke:'#f59e0b',fill:'none',strokeWidth:2,strokeLinecap:'round'}}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+              <button className={`role-btn ${role === "contractor" ? "active-contractor" : ""}`} onClick={() => selectRole("contractor")} type="button">
+                <div className="role-icon contractor">
+                  <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                </div>
                 <span className="role-name">Contractor</span>
               </button>
-              <button className={`role-btn ${role === "public" ? "active" : ""}`} onClick={() => selectRole("public")} type="button">
-                <div className="role-icon public"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 1 0-16 0" /></svg></div>
+              <button className={`role-btn ${role === "public" ? "active-public" : ""}`} onClick={() => selectRole("public")} type="button">
+                <div className="role-icon public">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
                 <span className="role-name">Public</span>
               </button>
             </div>
