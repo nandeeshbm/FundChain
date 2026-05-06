@@ -1,4 +1,29 @@
-# Public Fund Tracker
+<p align="center">
+  <img src="docs/images/banner.png" alt="Public Fund Tracker Banner" width="100%" />
+</p>
+
+<p align="center">
+  <strong>🔗 Blockchain-Powered Public Fund Transparency Platform</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React" />
+  <img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/MongoDB-7.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Solidity-0.8-363636?style=for-the-badge&logo=solidity&logoColor=white" alt="Solidity" />
+  <img src="https://img.shields.io/badge/Ethereum-Sepolia-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" alt="Ethereum" />
+  <img src="https://img.shields.io/badge/MetaMask-Integrated-E2761B?style=for-the-badge&logo=metamask&logoColor=white" alt="MetaMask" />
+</p>
+
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-fund-flow">Fund Flow</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-getting-started">Getting Started</a> •
+  <a href="#-smart-contracts">Smart Contracts</a> •
+  <a href="#-role-based-access">Roles</a>
+</p>
 
 Public Fund Tracker is a full-stack system for managing government project funds with blockchain escrow, AI-assisted anomaly checks, and role-based workflows for admins, auditors, and contractors.
 
