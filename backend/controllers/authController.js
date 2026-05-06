@@ -1,8 +1,12 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env');
 const apiResponse = require('../utils/apiResponse');
 const auditService = require('../services/auditService');
+
+const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+const hashOtp = (otp) => crypto.createHash('sha256').update(otp).digest('hex');
 
 // POST /api/auth/register
 const register = async (req, res, next) => {
@@ -112,4 +116,86 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getProfile };
+// POST /api/auth/request-otp
+const requestPasswordOtp = async (req, res, next) => {
+  try {
+    const { email, role } = req.body;
+
+    const user = await User.findOne({ email, role });
+    if (!user) {
+      return apiResponse.error(res, 'User not found for OTP reset', [], 404);
+    }
+    if (!user.isActive) {
+      return apiResponse.error(res, 'Account deactivated', [], 403);
+    }
+
+    const otp = generateOtp();
+    user.resetOtpHash = hashOtp(otp);
+    user.resetOtpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    console.log(`[OTP] ${email} (${role}) => ${otp}`);
+
+    await auditService.logAction({
+      userId: user._id,
+      userRole: user.role,
+      action: 'PASSWORD_RESET_OTP_REQUESTED',
+      entityType: 'auth',
+      entityId: user._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return apiResponse.success(res, 'OTP generated. Check server console for the code.', {
+      expiresInMinutes: 10,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/auth/reset-password
+const resetPasswordWithOtp = async (req, res, next) => {
+  try {
+    const { email, role, otp, newPassword } = req.body;
+
+    const user = await User.findOne({ email, role });
+    if (!user) {
+      return apiResponse.error(res, 'User not found for password reset', [], 404);
+    }
+    if (!user.isActive) {
+      return apiResponse.error(res, 'Account deactivated', [], 403);
+    }
+
+    if (!user.resetOtpHash || !user.resetOtpExpiresAt) {
+      return apiResponse.error(res, 'OTP not requested or expired', [], 400);
+    }
+    if (new Date(user.resetOtpExpiresAt).getTime() < Date.now()) {
+      return apiResponse.error(res, 'OTP expired. Request a new one.', [], 400);
+    }
+    if (hashOtp(otp) !== user.resetOtpHash) {
+      return apiResponse.error(res, 'Invalid OTP', [], 400);
+    }
+
+    user.passwordHash = newPassword;
+    user.resetOtpHash = null;
+    user.resetOtpExpiresAt = null;
+    await user.save();
+
+    await auditService.logAction({
+      userId: user._id,
+      userRole: user.role,
+      action: 'PASSWORD_RESET_COMPLETED',
+      entityType: 'auth',
+      entityId: user._id.toString(),
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return apiResponse.success(res, 'Password reset successfully', { email: user.email });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, getProfile, requestPasswordOtp, resetPasswordWithOtp };

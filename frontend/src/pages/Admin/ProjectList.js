@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGovtAPI } from "../../hooks/useGovtAPI";
 
 function ProjectList() {
+  const navigate = useNavigate();
   const { 
     loading: apiLoading, 
     fetchProjects: apiFetchProjects, 
@@ -102,14 +104,14 @@ function ProjectList() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              {["Project ID", "Name", "Department", "Budget", "Status", "Progress"].map(h => (
+              {["Project ID", "Name", "Department", "Budget", "Status", "Progress", "Action"].map(h => (
                 <th key={h} style={{ background: "#f8fafc", padding: "13px 16px", textAlign: "left", fontSize: 12, color: "#475569", textTransform: "uppercase", borderBottom: "1px solid #e2e8f0" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {projects.length === 0 ? (
-              <tr><td colSpan={6} style={{ padding: 30, textAlign: "center", color: "#94a3b8" }}>No projects found</td></tr>
+              <tr><td colSpan={7} style={{ padding: 30, textAlign: "center", color: "#94a3b8" }}>No projects found</td></tr>
             ) : projects.map(p => (
               <tr key={p.projectId}>
                 <td style={{ padding: "14px 16px", fontFamily: "monospace", color: "#2563eb", fontWeight: 600, borderBottom: "1px solid #f1f5f9", fontSize: 12 }}>{p.projectId}</td>
@@ -124,6 +126,14 @@ function ProjectList() {
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 600 }}>{p.progress || 0}%</span>
                   </div>
+                </td>
+                <td style={{ padding: "14px 16px", borderBottom: "1px solid #f1f5f9" }}>
+                  <button
+                    onClick={() => navigate(`/admin/projects/${p.projectId}`)}
+                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#2563eb", fontWeight: 700, fontSize: 11, cursor: "pointer" }}
+                  >
+                    View
+                  </button>
                 </td>
               </tr>
             ))}

@@ -11,6 +11,7 @@ import Transactions from "./pages/Admin/Transactions";
 import Reports from "./pages/Admin/Reports";
 import AdminAlerts from "./pages/Admin/Alerts";
 import Settings from "./pages/Admin/Settings";
+import AdminProjectDetails from "./pages/Admin/ProjectDetails";
 
 // Contractor
 import ContractorLayout from "./components/ContractorLayout";
@@ -50,6 +51,7 @@ function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="projects" element={<ProjectList />} />
+        <Route path="projects/:projectId" element={<AdminProjectDetails />} />
         <Route path="fund-release" element={<FundRelease />} />
         <Route path="contractors" element={<ContractorMgmt />} />
         <Route path="transactions" element={<Transactions />} />

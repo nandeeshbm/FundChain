@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const API = 'http://localhost:5000/api';
 const authHeader = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
 
 const AlertsModule = () => {
+  const navigate = useNavigate();
   const [flagged, setFlagged] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [freezeLogs, setFreezeLogs] = useState([]);
@@ -82,7 +84,7 @@ const AlertsModule = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Txn ID', 'Project', 'Amount', 'Priority', 'Vault Status', 'Time'].map(h => (
+                  {['Txn ID', 'Project', 'Amount', 'Priority', 'Vault Status', 'Time', 'Action'].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, color: '#94a3b8', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
@@ -96,6 +98,15 @@ const AlertsModule = () => {
                     <td style={{ padding: '12px 16px' }}><span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: '#fef2f2', color: '#dc2626' }}>🔴 High</span></td>
                     <td style={{ padding: '12px 16px' }}><span style={{ padding: '3px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: '#fef2f2', color: '#dc2626' }}>Frozen</span></td>
                     <td style={{ padding: '12px 16px', fontSize: 11, color: '#94a3b8' }}>{timeAgo(item.createdAt)}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <button
+                        onClick={() => navigate(`/admin/projects/${item.projectId?.projectId || ''}`)}
+                        disabled={!item.projectId?.projectId}
+                        style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb', fontWeight: 700, fontSize: 11, cursor: item.projectId?.projectId ? 'pointer' : 'not-allowed', opacity: item.projectId?.projectId ? 1 : 0.5 }}
+                      >
+                        View
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -138,7 +138,7 @@ const submitProof = async (req, res, next) => {
 const getMySubmissions = async (req, res, next) => {
   try {
     const User = require('../models/User');
-    const user = await User.findById(req.user?._id).select('contractorRegistryId walletAddress').lean();
+    const user = await User.findById(req.user?._id).select('contractorRegistryId walletAddress email').lean();
 
     let vendor = null;
     if (user?.contractorRegistryId) {
@@ -146,6 +146,9 @@ const getMySubmissions = async (req, res, next) => {
     }
     if (!vendor && user?.walletAddress) {
       vendor = await Vendor.findOne({ walletAddress: user.walletAddress }).lean();
+    }
+    if (!vendor && user?.email) {
+      vendor = await Vendor.findOne({ email: user.email.toLowerCase() }).lean();
     }
     if (!vendor) {
       vendor = await Vendor.findOne({ createdBy: req.user?._id }).lean();

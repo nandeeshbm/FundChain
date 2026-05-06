@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API = "http://localhost:5000/api";
@@ -6,6 +7,7 @@ const getToken = () => localStorage.getItem("token");
 const authHeader = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
 
 const Transactions = () => {
+  const navigate = useNavigate();
   const [txnData, setTxnData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -87,15 +89,17 @@ const Transactions = () => {
           <table style={styles.table}>
             <thead style={styles.thead}>
               <tr>
-                {["Txn ID", "Project", "Date", "Type", "Amount (₹)", "Status", "Sentinel", "Block #"].map(h => (
+                {["Txn ID", "Project", "Date", "Type", "Amount (INR)", "Status", "Sentinel", "Block #", "Action"].map(h => (
                   <th key={h} style={styles.th}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filteredTxns.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: 30, textAlign: "center", color: "#94a3b8" }}>No transactions found</td></tr>
-              ) : filteredTxns.map((txn) => (
+                <tr><td colSpan={9} style={{ padding: 30, textAlign: "center", color: "#94a3b8" }}>No transactions found</td></tr>
+              ) : filteredTxns.map((txn) => {
+                const projectCode = txn.projectId?.projectId || txn.projectCode || null;
+                return (
                 <tr key={txn._id}>
                   <td style={styles.txnId}>{txn.txnId}</td>
                   <td style={{ ...styles.td, fontWeight: 600 }}>{txn.projectNameSnapshot || txn.projectId?.projectName || 'N/A'}</td>
@@ -107,8 +111,18 @@ const Transactions = () => {
                   <td style={styles.td}><span style={getStatusBadgeStyle(txn.status)}>{txn.status}</span></td>
                   <td style={styles.td}><span style={getStatusBadgeStyle(txn.sentinelStatus)}>{txn.sentinelStatus}</span></td>
                   <td style={{ ...styles.td, fontFamily: "monospace", fontSize: 11 }}>{txn.blockNumber || "—"}</td>
+                  <td style={styles.td}>
+                    <button
+                      onClick={() => navigate(`/admin/projects/${projectCode}`)}
+                      disabled={!projectCode}
+                      style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff', color: '#2563eb', fontWeight: 700, fontSize: 11, cursor: projectCode ? 'pointer' : 'not-allowed', opacity: projectCode ? 1 : 0.5 }}
+                    >
+                      View
+                    </button>
+                  </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
 

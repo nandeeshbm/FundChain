@@ -14,6 +14,15 @@ function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showForgot, setShowForgot] = useState(false);
+  const [otpStep, setOtpStep] = useState("request");
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpRole, setOtpRole] = useState("admin");
+  const [otpCode, setOtpCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpMessage, setOtpMessage] = useState("");
+  const [otpError, setOtpError] = useState("");
 
   useEffect(() => {
     const id = "pfts-google-fonts";
@@ -84,6 +93,76 @@ function Login() {
     }
   };
 
+  const openForgot = () => {
+    setOtpEmail(email || "");
+    setOtpRole(role === "public" ? "admin" : role);
+    setOtpCode("");
+    setNewPassword("");
+    setOtpMessage("");
+    setOtpError("");
+    setOtpStep("request");
+    setShowForgot(true);
+  };
+
+  const requestOtp = async () => {
+    if (otpRole === "public") {
+      setOtpError("OTP reset is only for admin, auditor, or contractor.");
+      return;
+    }
+    if (!otpEmail) {
+      setOtpError("Enter your email address.");
+      return;
+    }
+    setOtpLoading(true);
+    setOtpError("");
+    setOtpMessage("");
+    try {
+      const res = await axios.post(`${API_URL}/auth/request-otp`, { email: otpEmail, role: otpRole });
+      if (res.data.success) {
+        setOtpMessage("OTP generated. Check the server console for the code.");
+        setOtpStep("verify");
+      } else {
+        setOtpError(res.data.message || "Unable to send OTP.");
+      }
+    } catch (err) {
+      setOtpError(err.response?.data?.message || "Unable to send OTP.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const resetPassword = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      setOtpError("Enter the 6-digit OTP.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setOtpError("New password must be at least 6 characters.");
+      return;
+    }
+    setOtpLoading(true);
+    setOtpError("");
+    setOtpMessage("");
+    try {
+      const res = await axios.post(`${API_URL}/auth/reset-password`, {
+        email: otpEmail,
+        role: otpRole,
+        otp: otpCode,
+        newPassword,
+      });
+      if (res.data.success) {
+        setOtpMessage("Password reset successful. You can log in now.");
+        setShowForgot(false);
+      } else {
+        setOtpError(res.data.message || "Unable to reset password.");
+      }
+    } catch (err) {
+      setOtpError(err.response?.data?.message || "Unable to reset password.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   return (
     <div className="login-root">
       <style>{`
@@ -130,8 +209,18 @@ function Login() {
         .form-footer { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; margin-top: -4px; }
         .remember-me { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--gray-600); cursor: pointer; margin: 0; }
         .remember-me input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--navy-mid); cursor: pointer; padding: 0; border: none; background: none; }
-        .forgot { font-size: 0.9rem; color: var(--navy-mid); text-decoration: none; font-weight: 500; }
+        .forgot { font-size: 0.9rem; color: var(--navy-mid); text-decoration: none; font-weight: 500; background: none; border: none; padding: 0; cursor: pointer; }
         .forgot:hover { text-decoration: underline; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+        .modal-card { width: min(480px, 92vw); background: white; border-radius: 16px; padding: 22px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        .modal-sub { font-size: 0.85rem; color: var(--gray-600); margin-top: 4px; }
+        .modal-close { background: #e2e8f4; border: none; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-weight: 600; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+        .btn-secondary { flex: 1; padding: 14px; border-radius: 12px; border: 1.5px solid var(--gray-200); background: white; color: var(--gray-600); font-weight: 600; cursor: pointer; }
+        .success-msg { background: rgba(16,185,129,0.12); color: #10b981; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; text-align: center; }
+        .otp-hint { font-size: 0.8rem; color: var(--gray-600); margin-top: 8px; }
         .btn-login { width: 100%; padding: 18px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); color: var(--white); border: none; border-radius: 12px; font-family: inherit; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s; letter-spacing: 0.5px; box-shadow: 0 4px 18px rgba(15,31,61,0.28); margin-bottom: 32px; }
         .btn-login:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(15,31,61,0.34); }
         .btn-login:active { transform: translateY(0); }
@@ -223,7 +312,7 @@ function Login() {
                 <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
                 Remember me
               </label>
-              <a href="/login" className="forgot">Forgot Password?</a>
+              <button type="button" className="forgot" onClick={openForgot}>Forgot Password?</button>
             </div>
 
             <button className="btn-login" onClick={handleLogin} type="button" disabled={loading}>
@@ -261,6 +350,95 @@ function Login() {
           </div>
         </div>
       </div>
+
+      {showForgot && (
+        <div className="modal-overlay" onClick={() => setShowForgot(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Reset Password</div>
+                <div className="modal-sub">OTP is shown in the backend terminal</div>
+              </div>
+              <button className="modal-close" type="button" onClick={() => setShowForgot(false)}>Close</button>
+            </div>
+
+            {otpError && <div className="error-msg">{otpError}</div>}
+            {otpMessage && <div className="success-msg">{otpMessage}</div>}
+
+            {otpStep === "request" ? (
+              <>
+                <div className="form-group">
+                  <label htmlFor="otp-email">Email</label>
+                  <div className="input-wrap">
+                    <input
+                      type="email"
+                      id="otp-email"
+                      placeholder="you@gov.in"
+                      value={otpEmail}
+                      onChange={(e) => setOtpEmail(e.target.value)}
+                    />
+                    <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" /><polyline points="2,4 12,13 22,4" /></svg>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="otp-role">Role</label>
+                  <div className="input-wrap">
+                    <select id="otp-role" value={otpRole} onChange={(e) => setOtpRole(e.target.value)} style={{ width: '100%', padding: '16px 16px 16px 50px', border: '1.5px solid var(--gray-200)', borderRadius: 12, fontFamily: 'inherit', fontSize: '1rem', color: 'var(--text)', background: 'var(--gray-100)', outline: 'none' }}>
+                      <option value="admin">Admin</option>
+                      <option value="auditor">Auditor</option>
+                      <option value="contractor">Contractor</option>
+                    </select>
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                </div>
+
+                <button className="btn-login" type="button" onClick={requestOtp} disabled={otpLoading}>
+                  {otpLoading ? "Sending OTP..." : "Send OTP"}
+                </button>
+                <div className="otp-hint">OTP will appear in your backend console for this demo.</div>
+              </>
+            ) : (
+              <>
+                <div className="form-group">
+                  <label htmlFor="otp-code">OTP Code</label>
+                  <div className="input-wrap">
+                    <input
+                      type="text"
+                      id="otp-code"
+                      placeholder="6-digit OTP"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                    />
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="otp-new-password">New Password</label>
+                  <div className="input-wrap">
+                    <input
+                      type="password"
+                      id="otp-new-password"
+                      placeholder="Minimum 6 characters"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button className="btn-secondary" type="button" onClick={() => setOtpStep("request")}>Back</button>
+                  <button className="btn-login" type="button" onClick={resetPassword} disabled={otpLoading}>
+                    {otpLoading ? "Resetting..." : "Reset Password"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

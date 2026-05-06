@@ -13,6 +13,8 @@ const UserSchema = new mongoose.Schema({
   contractorRegistryId: { type: String, default: null },
   walletAddress: { type: String, default: null },
   isActive: { type: Boolean, default: true },
+  resetOtpHash: { type: String, default: null },
+  resetOtpExpiresAt: { type: Date, default: null },
 }, { timestamps: true });
 
 // email index is auto-created by unique: true
@@ -32,6 +34,8 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
 UserSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.passwordHash;
+  delete obj.resetOtpHash;
+  delete obj.resetOtpExpiresAt;
   return obj;
 };
 

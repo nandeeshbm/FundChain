@@ -38,16 +38,24 @@ export default function ReviewClaim() {
   };
 
   const resolve = async (status) => {
-    if (!note.trim()) return alert('Enter a resolution note');
+    const trimmedNote = note.trim();
+    if (trimmedNote.length < 2) return alert('Enter a resolution note (min 2 chars)');
     setResolving(true);
     try {
       await axios.post(`${API}/auditor/transactions/${selected.txnId}/resolve`,
-        { resolutionStatus: status, resolutionNote: note }, authHeader());
+        { resolutionStatus: status, resolutionNote: trimmedNote }, authHeader());
+
+      if (status === 'frozen') {
+        const projectCode = detail?.transaction?.projectId?.projectId || detail?.transaction?.projectId;
+        if (!projectCode) throw new Error('Project ID missing for freeze action');
+        await axios.post(`${API}/auditor/projects/${projectCode}/freeze`,
+          { frozen: true, reason: trimmedNote, source: 'manual' }, authHeader());
+      }
       alert(`✅ ${status === 'resolved' ? 'Approved' : 'Flagged'} successfully`);
       setSelected(null); setDetail(null); setNote('');
       const res = await axios.get(`${API}/transactions?limit=50`, authHeader());
       if (res.data.success) setTransactions(res.data.data || []);
-    } catch (e) { alert(e.response?.data?.message || 'Failed'); }
+    } catch (e) { alert(e.response?.data?.message || e.message || 'Failed'); }
     finally { setResolving(false); }
   };
 

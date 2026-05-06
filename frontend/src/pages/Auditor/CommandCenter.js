@@ -55,22 +55,26 @@ const AuditorCommandCenter = () => {
   };
 
   const handleResolve = async (resolutionStatus) => {
-    if (!resolutionNote.trim()) {
-      alert('Please enter a resolution note before proceeding');
+    const trimmedNote = resolutionNote.trim();
+    if (trimmedNote.length < 2) {
+      alert('Please enter a resolution note (min 2 chars) before proceeding');
       return;
     }
+    if (!selectedClaim) return;
     setResolving(true);
     try {
       const res = await axios.post(
         `${API}/auditor/transactions/${selectedClaim.txnId}/resolve`,
-        { resolutionStatus, resolutionNote },
+        { resolutionStatus, resolutionNote: trimmedNote },
         authHeader()
       );
       if (res.data.success) {
         if (resolutionStatus === 'frozen') {
+          const projectCode = selectedClaim.projectId?.projectId || selectedClaim.projectId;
+          if (!projectCode) throw new Error('Project ID missing for freeze action');
           await axios.post(
-            `${API}/auditor/projects/${selectedClaim.projectId?.projectId || selectedClaim.projectId}/freeze`,
-            { frozen: true, reason: resolutionNote, source: 'public_witness' },
+            `${API}/auditor/projects/${projectCode}/freeze`,
+            { frozen: true, reason: trimmedNote, source: 'public_witness' },
             authHeader()
           );
         }
@@ -80,13 +84,14 @@ const AuditorCommandCenter = () => {
         fetchFlagged();
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to resolve');
+      alert(err.response?.data?.message || err.message || 'Failed to resolve');
     } finally { setResolving(false); }
   };
 
   const handleResolveReport = async (resolutionStatus) => {
-    if (!resolutionNote.trim()) {
-      alert('Please enter a resolution note before proceeding');
+    const trimmedNote = resolutionNote.trim();
+    if (trimmedNote.length < 2) {
+      alert('Please enter a resolution note (min 2 chars) before proceeding');
       return;
     }
     if (!selectedReport) return;
@@ -95,14 +100,14 @@ const AuditorCommandCenter = () => {
     try {
       await axios.post(
         `${API}/auditor/report-issues/${selectedReport._id}/resolve`,
-        { resolutionStatus, resolutionNote },
+        { resolutionStatus, resolutionNote: trimmedNote },
         authHeader()
       );
 
       if (resolutionStatus === 'frozen') {
         await axios.post(
           `${API}/auditor/projects/${selectedReport.projectId}/freeze`,
-          { frozen: true, reason: resolutionNote, source: 'public_witness' },
+          { frozen: true, reason: trimmedNote, source: 'public_witness' },
           authHeader()
         );
       }
@@ -112,7 +117,7 @@ const AuditorCommandCenter = () => {
       setResolutionNote('');
       fetchFlagged();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to resolve');
+      alert(err.response?.data?.message || err.message || 'Failed to resolve');
     } finally {
       setResolving(false);
     }

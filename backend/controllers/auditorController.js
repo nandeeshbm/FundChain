@@ -66,8 +66,9 @@ const resolveTransaction = async (req, res, next) => {
     if (resolutionStatus === 'resolved') {
       txn.sentinelStatus = 'success';
       txn.status = 'success';
-    } else if (resolutionStatus === 'escalated') {
+    } else if (resolutionStatus === 'escalated' || resolutionStatus === 'frozen') {
       txn.sentinelStatus = 'flagged';
+      txn.status = 'flagged';
     } else {
       txn.sentinelStatus = 'dismissed';
     }
@@ -78,7 +79,7 @@ const resolveTransaction = async (req, res, next) => {
       const ms = await Milestone.findById(txn.milestoneId);
       if (ms) {
         if (resolutionStatus === 'resolved') ms.status = 'verified';
-        else if (resolutionStatus === 'escalated') ms.status = 'flagged';
+        else if (resolutionStatus === 'escalated' || resolutionStatus === 'frozen') ms.status = 'flagged';
         await ms.save();
       }
     }

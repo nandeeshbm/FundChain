@@ -32,6 +32,18 @@ const loginSchema = Joi.object({
   password: Joi.string().required(),
 });
 
+const requestOtpSchema = Joi.object({
+  email: Joi.string().email().required(),
+  role: Joi.string().valid('admin', 'auditor', 'contractor').required(),
+});
+
+const resetPasswordSchema = Joi.object({
+  email: Joi.string().email().required(),
+  role: Joi.string().valid('admin', 'auditor', 'contractor').required(),
+  otp: Joi.string().length(6).required(),
+  newPassword: Joi.string().min(6).max(128).required(),
+});
+
 const milestoneItemSchema = Joi.object({
   title: Joi.string().trim().required(),
   description: Joi.string().trim().allow('').optional(),
@@ -135,6 +147,8 @@ module.exports = {
   validate,
   registerSchema,
   loginSchema,
+  requestOtpSchema,
+  resetPasswordSchema,
   createProjectSchema,
   createIssueReportSchema,
   submitProofSchema,
