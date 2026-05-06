@@ -1,31 +1,29 @@
-<p align="center">
-  <img src="docs/images/banner.png" alt="Public Fund Tracker Banner" width="100%" />
-</p>
+# 🔗 Public Fund Tracker
 
-<p align="center">
-  <strong>🔗 Blockchain-Powered Public Fund Transparency Platform</strong>
-</p>
+> **Blockchain-Powered Public Fund Transparency Platform**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React" />
-  <img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/MongoDB-7.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/Solidity-0.8-363636?style=for-the-badge&logo=solidity&logoColor=white" alt="Solidity" />
-  <img src="https://img.shields.io/badge/Ethereum-Sepolia-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" alt="Ethereum" />
-  <img src="https://img.shields.io/badge/MetaMask-Integrated-E2761B?style=for-the-badge&logo=metamask&logoColor=white" alt="MetaMask" />
-</p>
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8-363636?style=for-the-badge&logo=solidity&logoColor=white)](https://solidity.readthedocs.io/)
+[![Ethereum](https://img.shields.io/badge/Ethereum-Sepolia-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white)](https://sepolia.etherscan.io/)
+[![MetaMask](https://img.shields.io/badge/MetaMask-Integrated-E2761B?style=for-the-badge&logo=metamask&logoColor=white)](https://metamask.io/)
 
-<p align="center">
-  <a href="#-features">Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-fund-flow">Fund Flow</a> •
-  <a href="#-tech-stack">Tech Stack</a> •
-  <a href="#-getting-started">Getting Started</a> •
-  <a href="#-smart-contracts">Smart Contracts</a> •
-  <a href="#-role-based-access">Roles</a>
-</p>
+---
 
-Public Fund Tracker is a full-stack system for managing government project funds with blockchain escrow, AI-assisted anomaly checks, and role-based workflows for admins, auditors, and contractors.
+## 📖 Quick Navigation
+
+- [✨ Features](#-features)
+- [🏗️ Architecture](#-architecture)
+- [💰 Fund Flow](#-fund-flow)
+- [🛠️ Tech Stack](#-tech-stack)
+- [🚀 Getting Started](#-getting-started)
+- [📝 Smart Contracts](#-smart-contracts)
+- [👥 Role-Based Access](#-role-based-access)
+
+---
+
+**Public Fund Tracker** is a full-stack system for managing government project funds with blockchain escrow, AI-assisted anomaly checks, and role-based workflows for admins, auditors, and contractors.
 
 ## Features
 - On-chain escrow vault for budget locking and milestone releases (Hardhat + Solidity).
